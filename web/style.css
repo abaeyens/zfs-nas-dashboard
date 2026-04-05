@@ -102,24 +102,10 @@ tr.row-red   td { background: #2a0000; }
 
 .badge { font-size: 11px; font-weight: normal; color: var(--muted); }
 
-/* ── Disk SMART cards ─────────────────────────────────────── */
-.disk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-
-.disk-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px;
-  font-size: 12px;
-}
-.disk-card .disk-name { font-weight: 600; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.disk-model { color: var(--muted); font-size: 11px; margin-bottom: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.disk-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; }
-.disk-label { color: var(--muted); }
-.disk-val { font-weight: 500; }
-.disk-val.green { color: var(--green); }
-.disk-val.amber { color: var(--amber); }
-.disk-val.red   { color: var(--red); }
+/* ── Disk SMART table — coloured cells ───────────────────── */
+.cell-green { color: var(--green); font-weight: 500; }
+.cell-amber { color: var(--amber); font-weight: 500; }
+.cell-red   { color: var(--red);   font-weight: 500; }
 
 /* ── ZFS pool / ARC ───────────────────────────────────────── */
 .pool-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; font-size: 12px; }

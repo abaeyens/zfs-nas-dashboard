@@ -265,37 +265,42 @@ let tempHistory = {};
 
 function renderDiskCards(disks) {
   if (!disks) return;
-  const container = document.getElementById('disk-cards');
-  container.innerHTML = disks.map(d => `
-    <div class="disk-card">
-      <div class="disk-name" title="${d.by_id}">${d.dev || d.by_id}</div>
-      <div class="disk-model" title="${d.serial}">${d.model || '—'}</div>
-      <div class="disk-row">
-        <span class="disk-label">Health</span>
-        <span class="disk-val ${d.health === 'PASSED' ? 'green' : 'red'}">${d.health || '—'}</span>
-      </div>
-      <div class="disk-row">
-        <span class="disk-label">Temp</span>
-        <span class="disk-val ${statusClass(d.celsius_status)}">${d.celsius != null ? d.celsius + ' °C' : '—'}</span>
-      </div>
-      <div class="disk-row">
-        <span class="disk-label">Pwr-on</span>
-        <span class="disk-val">${d.power_on_hours != null ? Math.floor(d.power_on_hours / 24) + ' d' : '—'}</span>
-      </div>
-      <div class="disk-row">
-        <span class="disk-label">Realloc</span>
-        <span class="disk-val ${statusClass(d.reallocated_status)}">${d.reallocated_sectors ?? '—'}</span>
-      </div>
-      <div class="disk-row">
-        <span class="disk-label">Pending</span>
-        <span class="disk-val ${statusClass(d.pending_status)}">${d.pending_sectors ?? '—'}</span>
-      </div>
-      <div class="disk-row">
-        <span class="disk-label">Uncorr</span>
-        <span class="disk-val ${statusClass(d.uncorrectable_status)}">${d.uncorrectable_errors ?? '—'}</span>
-      </div>
-    </div>
-  `).join('');
+  const container = document.getElementById('disk-table');
+  let html = `<div class="table-scroll">
+    <table>
+      <thead><tr>
+        <th>Device</th>
+        <th>Model</th>
+        <th>Health</th>
+        <th>Temp</th>
+        <th>Pwr-on</th>
+        <th>Realloc</th>
+        <th>Pending</th>
+        <th>Uncorr</th>
+      </tr></thead>
+      <tbody>`;
+  disks.forEach(d => {
+    const dev = d.dev ? d.dev.replace('/dev/', '') : (d.by_id || '—');
+    const model = d.model || '—';
+    const healthCls = d.health === 'PASSED' ? 'cell-green' : d.health === 'UNKNOWN' ? '' : 'cell-red';
+    const tempCls   = 'cell-' + (statusClass(d.celsius_status) || 'none');
+    const reallocCls = 'cell-' + (statusClass(d.reallocated_status) || 'none');
+    const pendingCls = 'cell-' + (statusClass(d.pending_status) || 'none');
+    const uncorrCls  = 'cell-' + (statusClass(d.uncorrectable_status) || 'none');
+    const poh = d.power_on_hours != null ? Math.floor(d.power_on_hours / 24) + ' d' : '—';
+    html += `<tr>
+        <td title="${d.by_id}">${dev}</td>
+        <td title="${d.serial || ''}">${model}</td>
+        <td class="${healthCls}">${d.health || '—'}</td>
+        <td class="${tempCls}">${d.celsius != null ? d.celsius + ' °C' : '—'}</td>
+        <td>${poh}</td>
+        <td class="${reallocCls}">${d.reallocated_sectors ?? '—'}</td>
+        <td class="${pendingCls}">${d.pending_sectors ?? '—'}</td>
+        <td class="${uncorrCls}">${d.uncorrectable_errors ?? '—'}</td>
+      </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
 }
 
 function applyTempHistory(rows) {
