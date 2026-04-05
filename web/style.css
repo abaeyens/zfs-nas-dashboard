@@ -121,6 +121,9 @@ tr.row-red   td { background: #2a0000; }
 /* Sectors R,P,C (col 6): centred */
 #disk-table th:nth-child(6), #disk-table td:nth-child(6) { text-align: center; }
 
+/* Errors R,W,Ck (col 3): centred */
+#zfs-pool-content th:nth-child(3), #zfs-pool-content td:nth-child(3) { text-align: center; }
+
 /* ── ZFS datasets table — column alignment ───────────────── */
 /* Used (col 2), Avail (col 3), Ref (col 4): right-aligned */
 #zfs-datasets-content th:nth-child(2), #zfs-datasets-content td:nth-child(2),

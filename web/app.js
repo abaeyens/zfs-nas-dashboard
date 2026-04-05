@@ -217,21 +217,32 @@ function renderZFSPool(pool) {
   let html = `<div class="pool-meta">
     <span class="state">${pool.name}</span>
     ${pill(pool.state)}
-    <span style="color:var(--muted);font-size:12px">${pool.scan && pool.scan.type ? pool.scan.type + ': ' + pool.scan.state : ''}</span>
+    <span style="color:var(--muted);font-size:12px">${(() => {
+      if (!pool.scan || !pool.scan.type) return '';
+      let s = pool.scan.type + ': ' + pool.scan.state;
+      if (pool.scan.end_time) {
+        const d = new Date(pool.scan.end_time);
+        if (!isNaN(d)) {
+          const pad = v => String(v).padStart(2, '0');
+          s += ' (' + d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ')';
+        }
+      }
+      return s;
+    })()}</span>
   </div>`;
   if (pool.vdevs && pool.vdevs.length) {
     html += `<table>
-      <thead><tr><th>VDev</th><th>State</th><th>R err</th><th>W err</th><th>Ck err</th></tr></thead>
+      <thead><tr><th>VDev</th><th>State</th><th>Errors<br>R,W,Ck</th></tr></thead>
       <tbody>`;
     pool.vdevs.forEach(v => {
       const hasErr = v.read_errors || v.write_errors || v.cksum_errors;
       const rowCls = hasErr > 0 ? 'row-amber' : '';
+      const vdevName = v.name.length > 12 ? '*' + v.name.slice(-12) : v.name;
+      const errors = `${v.read_errors}, ${v.write_errors}, ${v.cksum_errors}`;
       html += `<tr class="${rowCls}">
-        <td>${v.name}</td>
+        <td title="${v.name}">${vdevName}</td>
         <td>${pill(v.state)}</td>
-        <td>${v.read_errors}</td>
-        <td>${v.write_errors}</td>
-        <td>${v.cksum_errors}</td>
+        <td>${errors}</td>
       </tr>`;
     });
     html += `</tbody></table>`;
@@ -333,7 +344,7 @@ function renderDiskCards(disks) {
     const uncorrCls  = 'cell-' + (statusClass(d.uncorrectable_status) || 'none');
     const poh = d.power_on_hours != null ? Math.floor(d.power_on_hours / 24) + ' d' : '—';
     const sectorsCls = reallocCls !== 'cell-' ? reallocCls : pendingCls !== 'cell-' ? pendingCls : uncorrCls;
-    const sectorsVal = `${d.reallocated_sectors ?? '—'},${d.pending_sectors ?? '—'},${d.uncorrectable_errors ?? '—'}`;
+    const sectorsVal = `${d.reallocated_sectors ?? '—'}, ${d.pending_sectors ?? '—'}, ${d.uncorrectable_errors ?? '—'}`;
     html += `<tr>
         <td title="${d.by_id}">${dev}</td>
         <td class="cell-model" title="${model}">${serial}</td>
