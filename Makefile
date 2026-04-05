@@ -12,7 +12,7 @@ shell:
 	docker exec -it $(CONTAINER) bash
 
 test:
-	docker exec $(CONTAINER) go test ./...
+	docker exec -t $(CONTAINER) go test -buildvcs=false -v ./...
 
 logs:
 	docker compose logs -f

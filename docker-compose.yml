@@ -3,14 +3,15 @@ services:
     build: .
     container_name: nas-dashboard
     network_mode: host
+    pid: "host"          # shares host /proc — needed for /proc/spl/kstat/zfs (ARC stats)
     restart: unless-stopped
+    # TODO: remove this override once main.go is fully wired; container will stay up on its own
+    command: tail -f /dev/null
     volumes:
       # Source tree — edit on host, changes visible immediately inside container
       - .:/app
       # Persistent SQLite data
       - ./data:/data
-      # ZFS ARC stats (read-only)
-      - /proc/spl/kstat/zfs:/proc/spl/kstat/zfs:ro
       # Pool disks — bind-mount each drive individually (read-only)
       - /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1:/dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1:ro
       - /dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K2RSYV6X:/dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K2RSYV6X:ro
