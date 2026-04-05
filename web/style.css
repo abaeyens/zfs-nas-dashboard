@@ -114,6 +114,16 @@ tr.row-red   td { background: #2a0000; }
 #disk-table th:nth-child(6), #disk-table td:nth-child(6),
 #disk-table th:nth-child(7), #disk-table td:nth-child(7),
 #disk-table th:nth-child(8), #disk-table td:nth-child(8) { text-align: center; }
+
+/* ── ZFS datasets table — column alignment ───────────────── */
+/* Used (col 2), Avail (col 3), Ref (col 4): right-aligned */
+#zfs-datasets-content th:nth-child(2), #zfs-datasets-content td:nth-child(2),
+#zfs-datasets-content th:nth-child(3), #zfs-datasets-content td:nth-child(3),
+#zfs-datasets-content th:nth-child(4), #zfs-datasets-content td:nth-child(4) { text-align: right; }
+/* Ratio (col 5), Algo (col 6): centred */
+#zfs-datasets-content th:nth-child(5), #zfs-datasets-content td:nth-child(5),
+#zfs-datasets-content th:nth-child(6), #zfs-datasets-content td:nth-child(6) { text-align: center; }
+
 /* ── ZFS pool / ARC ───────────────────────────────────────── */
 .pool-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; font-size: 12px; }
 .pool-meta .state { font-weight: 700; }

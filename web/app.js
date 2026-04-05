@@ -18,6 +18,11 @@ function fmtBytes(n) {
   return n.toFixed(i === 0 ? 0 : 1) + ' ' + u[i];
 }
 
+function fmtGB(n) {
+  if (n == null) return '—';
+  return Math.round(n / (1024 ** 3)) + ' GB';
+}
+
 function fmtTime(isoOrUnix) {
   if (!isoOrUnix) return '—';
   const d = typeof isoOrUnix === 'number' ? new Date(isoOrUnix * 1000) : new Date(isoOrUnix);
@@ -227,14 +232,18 @@ function renderZFSDatasets(datasets) {
   let html = `<table>
     <thead><tr><th>Dataset</th><th>Used</th><th>Avail</th><th>Ref</th><th>Ratio</th><th>Algo</th></tr></thead>
     <tbody>`;
+  const root = datasets.length ? datasets[0].name : '';
   datasets.forEach(d => {
+    const depth = d.name === root ? 0 : (d.name.split('/').length - root.split('/').length);
+    const indent = '\u00a0\u00a0\u00a0\u00a0'.repeat(depth);  // nbsp indent per level
+    const label = depth === 0 ? d.name : indent + '\u2514\u00a0' + d.name.split('/').pop();
     html += `<tr>
-      <td>${d.name}</td>
-      <td>${fmtBytes(d.used_bytes)}</td>
-      <td>${fmtBytes(d.avail_bytes)}</td>
-      <td>${fmtBytes(d.refer_bytes)}</td>
-      <td>${d.compress_ratio ? d.compress_ratio.toFixed(2) + 'x' : '—'}</td>
-      <td>${d.compression || '—'}</td>
+      <td>${label}</td>
+      <td>${fmtGB(d.used_bytes)}</td>
+      <td>${fmtGB(d.avail_bytes)}</td>
+      <td>${fmtGB(d.refer_bytes)}</td>
+      <td>${d.compress_ratio ? d.compress_ratio.toFixed(2) + 'x' : '\u2014'}</td>
+      <td>${d.compression || '\u2014'}</td>
     </tr>`;
   });
   html += `</tbody></table>`;

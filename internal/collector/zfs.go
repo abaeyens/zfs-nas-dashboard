@@ -195,10 +195,10 @@ func parseScanLine(s string) ScanInfo {
 	return info
 }
 
-// collectDatasets runs `zfs list` and parses the output.
+// collectDatasets runs `zfs list -r` and parses the output.
 // `zfs list` returns human-readable sizes; use `-p` for raw bytes.
 func collectDatasets(cfg *config.Config, run CommandRunner) ([]Dataset, error) {
-	out, err := run("zfs", "list", "-Hp", "-o", "name,used,avail,refer,compressratio,compression", cfg.PoolName)
+	out, err := run("zfs", "list", "-Hrp", "-o", "name,used,avail,refer,compressratio,compression", cfg.PoolName)
 	if err != nil {
 		return nil, fmt.Errorf("zfs list: %w", err)
 	}
