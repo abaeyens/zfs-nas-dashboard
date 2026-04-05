@@ -124,6 +124,10 @@ tr.row-red   td { background: #2a0000; }
 #zfs-datasets-content th:nth-child(5), #zfs-datasets-content td:nth-child(5),
 #zfs-datasets-content th:nth-child(6), #zfs-datasets-content td:nth-child(6) { text-align: center; }
 
+/* ── ZFS snapshots table — column alignment ─────────────── */
+/* Size (col 3): right-aligned */
+#zfs-snapshots-content th:nth-child(3), #zfs-snapshots-content td:nth-child(3) { text-align: right; }
+
 /* ── ZFS pool / ARC ───────────────────────────────────────── */
 .pool-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; font-size: 12px; }
 .pool-meta .state { font-weight: 700; }

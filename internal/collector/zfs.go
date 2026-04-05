@@ -230,9 +230,9 @@ func parseZFSList(output string) []Dataset {
 	return datasets
 }
 
-// collectSnapshots runs `zfs list -t snapshot` and parses the output.
+// collectSnapshots runs `zfs list -r -t snapshot` and parses the output.
 func collectSnapshots(cfg *config.Config, run CommandRunner) ([]Snapshot, error) {
-	out, err := run("zfs", "list", "-Hp", "-t", "snapshot", "-o", "name,used,creation", "-S", "creation", cfg.PoolName)
+	out, err := run("zfs", "list", "-Hrp", "-t", "snapshot", "-o", "name,used,creation", "-S", "creation", cfg.PoolName)
 	if err != nil {
 		// No snapshots is not an error.
 		return nil, nil

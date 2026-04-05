@@ -25,8 +25,12 @@ function fmtGB(n) {
 
 function fmtTime(isoOrUnix) {
   if (!isoOrUnix) return '—';
-  const d = typeof isoOrUnix === 'number' ? new Date(isoOrUnix * 1000) : new Date(isoOrUnix);
-  return d.toLocaleString();
+  const n = Number(isoOrUnix);
+  const d = !isNaN(n) ? new Date(n * 1000) : new Date(isoOrUnix);
+  if (isNaN(d)) return '—';
+  const pad = v => String(v).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} `
+       + `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function pill(status) {
