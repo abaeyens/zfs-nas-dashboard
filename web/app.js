@@ -58,19 +58,21 @@ function setUpdated(id) {
 
 function initMobileNav() {
   const buttons = document.querySelectorAll('.mobile-nav .nav-btn');
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      buttons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const target = btn.dataset.target;
-      document.querySelectorAll('.panel').forEach(p => {
-        p.classList.toggle('active', p.dataset.name === target);
-      });
+  const saved   = sessionStorage.getItem('mobileTab') || 'files';
+
+  function activateMobile(target) {
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.target === target));
+    document.querySelectorAll('.panel').forEach(p => {
+      p.classList.toggle('active', p.dataset.name === target);
     });
+    sessionStorage.setItem('mobileTab', target);
+  }
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => activateMobile(btn.dataset.target));
   });
-  // Activate first panel on mobile on load
-  const firstPanel = document.querySelector('.panel');
-  if (firstPanel) firstPanel.classList.add('active');
+
+  activateMobile(saved);
 }
 
 // ── Medium nav ─────────────────────────────────────────────────────────────
@@ -78,23 +80,26 @@ function initMobileNav() {
 function initMediumNav() {
   const layout  = document.getElementById('layout');
   const buttons = document.querySelectorAll('.medium-nav .nav-btn');
-  layout.classList.add('page-files'); // default page
+  const saved   = sessionStorage.getItem('mediumPage') || 'files';
+
+  function activateMedium(target) {
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.target === target));
+    layout.classList.toggle('page-files',  target === 'files');
+    layout.classList.toggle('page-system', target === 'system');
+    sessionStorage.setItem('mediumPage', target);
+    // Resize charts after panels become visible
+    setTimeout(() => {
+      sunburstChart && sunburstChart.resize();
+      userPieChart  && userPieChart.resize();
+      tempChart     && tempChart.resize();
+    }, 50);
+  }
 
   buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      buttons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const target = btn.dataset.target; // 'files' or 'system'
-      layout.classList.toggle('page-files',  target === 'files');
-      layout.classList.toggle('page-system', target === 'system');
-      // Resize charts after panels become visible
-      setTimeout(() => {
-        sunburstChart && sunburstChart.resize();
-        userPieChart  && userPieChart.resize();
-        tempChart     && tempChart.resize();
-      }, 50);
-    });
+    btn.addEventListener('click', () => activateMedium(btn.dataset.target));
   });
+
+  activateMedium(saved);
 }
 
 // ── ECharts helpers ────────────────────────────────────────────────────────
