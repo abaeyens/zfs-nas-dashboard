@@ -102,7 +102,7 @@ function loadFiles() {
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(data => {
       document.getElementById('files-scanning').hidden = true;
-      renderSunburst(data.tree);
+      renderSunburst(data);
       renderUserPie(data.users);
       setUpdated('files-updated');
     })
@@ -112,22 +112,51 @@ function loadFiles() {
     });
 }
 
-function treeToSunburst(node) {
+function treeToSunburst(node, colorIndex) {
   if (!node) return null;
   const out = {
     name: node.name || node.path || '/',
     value: node.size_bytes,
     itemStyle: {},
   };
+  if (colorIndex !== undefined) {
+    out.itemStyle.color = DISK_COLORS[colorIndex % DISK_COLORS.length];
+  }
   if (node.children && node.children.length) {
-    out.children = node.children.map(treeToSunburst).filter(Boolean);
+    out.children = node.children.map((c, i) =>
+      treeToSunburst(c, colorIndex !== undefined ? colorIndex : i)
+    ).filter(Boolean);
   }
   return out;
 }
 
-function renderSunburst(tree) {
+function renderSunburst(filesData) {
+  const tree = filesData && filesData.tree;
   if (!tree || !sunburstChart) return;
-  const data = treeToSunburst(tree);
+  const root = treeToSunburst(tree);
+  if (!root) return;
+
+  // Assign distinct colors to top-level directory children
+  if (root.children) {
+    root.children.forEach((c, i) => {
+      c.itemStyle = { color: DISK_COLORS[i % DISK_COLORS.length] };
+    });
+  }
+
+  // Append "Snapshots" and "Available" segments so the donut shows full pool capacity
+  const snapshotBytes = (filesData && filesData.snapshot_bytes) || 0;
+  const availBytes = (filesData && filesData.avail_bytes) || 0;
+  if (snapshotBytes > 0) {
+    if (!root.children) root.children = [];
+    root.children.push({ name: 'Snapshots & Trashed', value: snapshotBytes, itemStyle: { color: '#8c8c8c' } });
+    root.value = (root.value || 0) + snapshotBytes;
+  }
+  if (availBytes > 0) {
+    if (!root.children) root.children = [];
+    root.children.push({ name: 'Available', value: availBytes, itemStyle: { color: '#2d4a2d' } });
+    root.value = (root.value || 0) + availBytes;
+  }
+
   sunburstChart.setOption({
     backgroundColor: 'transparent',
     tooltip: {
@@ -136,9 +165,9 @@ function renderSunburst(tree) {
     },
     series: [{
       type: 'sunburst',
-      data: data ? [data] : [],
+      data: root.children || [root],
       radius: ['15%', '95%'],
-      label: { show: true, fontSize: 10, overflow: 'truncate' },
+      label: { show: false },
       emphasis: { focus: 'ancestor' },
       levels: [{}, { r0: '15%', r: '35%' }, { r0: '35%', r: '60%' }, { r0: '60%', r: '80%' }, { r0: '80%', r: '95%' }],
     }],

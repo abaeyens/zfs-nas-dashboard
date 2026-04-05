@@ -26,8 +26,10 @@ type UserUsage struct {
 
 // FilesResult is the payload returned by GET /api/files.
 type FilesResult struct {
-	Tree  *DirTree    `json:"tree"`
-	Users []UserUsage `json:"users"`
+	Tree          *DirTree    `json:"tree"`
+	Users         []UserUsage `json:"users"`
+	AvailBytes    int64       `json:"avail_bytes"`
+	SnapshotBytes int64       `json:"snapshot_bytes"`
 }
 
 // Files runs du and find against the pool path and returns the result.
@@ -42,13 +44,37 @@ func Files(cfg *config.Config, run CommandRunner) (*FilesResult, error) {
 		return nil, fmt.Errorf("user usage: %w", err)
 	}
 
-	return &FilesResult{Tree: tree, Users: users}, nil
+	avail, snapshot, _ := collectPoolStats(cfg, run) // non-fatal if unavailable
+	return &FilesResult{Tree: tree, Users: users, AvailBytes: avail, SnapshotBytes: snapshot}, nil
+}
+
+// collectPoolStats retrieves available bytes and snapshot-overhead bytes (summed across all datasets).
+func collectPoolStats(cfg *config.Config, run CommandRunner) (avail, snapshotBytes int64, err error) {
+	// avail is a pool-level property.
+	outAvail, err := run("zfs", "get", "-Hp", "-o", "value", "avail", cfg.PoolName)
+	if err != nil {
+		return 0, 0, err
+	}
+	avail, _ = strconv.ParseInt(strings.TrimSpace(string(outAvail)), 10, 64)
+
+	// usedbysnapshots must be summed recursively across all child datasets.
+	outSnap, err := run("zfs", "get", "-Hrp", "-o", "value", "usedbysnapshots", cfg.PoolName)
+	if err != nil {
+		return avail, 0, nil // non-fatal
+	}
+	for _, line := range strings.Split(strings.TrimSpace(string(outSnap)), "\n") {
+		v, parseErr := strconv.ParseInt(strings.TrimSpace(line), 10, 64)
+		if parseErr == nil {
+			snapshotBytes += v
+		}
+	}
+	return avail, snapshotBytes, nil
 }
 
 // collectDirTree runs `du -x --block-size=1 --max-depth N` and builds a tree.
 func collectDirTree(cfg *config.Config, run CommandRunner) (*DirTree, error) {
 	maxDepth := strconv.Itoa(cfg.ScanDepth)
-	out, err := run("du", "-x", "--block-size=1", "--max-depth="+maxDepth, cfg.PoolPath)
+	out, err := run("du", "--block-size=1", "--max-depth="+maxDepth, cfg.PoolPath)
 	if err != nil {
 		return nil, fmt.Errorf("du: %w", err)
 	}
@@ -128,7 +154,7 @@ func parentPath(path string, nodes map[string]*DirTree) *DirTree {
 // Owners with uid < 1000 are grouped into a single "system" entry.
 func collectUserUsage(cfg *config.Config, run CommandRunner) ([]UserUsage, error) {
 	maxDepth := strconv.Itoa(cfg.ScanDepth)
-	out, err := run("find", cfg.PoolPath, "-xdev", "-maxdepth", maxDepth, "-printf", "%U %b\n")
+	out, err := run("find", cfg.PoolPath, "-maxdepth", maxDepth, "-printf", "%U %b\n")
 	if err != nil {
 		return nil, fmt.Errorf("find: %w", err)
 	}
