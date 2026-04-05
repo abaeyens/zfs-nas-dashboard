@@ -182,6 +182,7 @@ tr.row-red   td { background: #2a0000; }
     display: flex;
     flex-direction: row;
     height: calc(100vh - var(--nav-h));
+    height: calc(100dvh - var(--nav-h));
     overflow: hidden;
   }
 
@@ -260,11 +261,13 @@ tr.row-red   td { background: #2a0000; }
   .layout {
     grid-template-columns: 1fr;
     height: calc(100vh - var(--nav-h));
+    height: calc(100dvh - var(--nav-h));
   }
 
   .panel {
     display: none;
     height: calc(100vh - var(--nav-h));
+    height: calc(100dvh - var(--nav-h));
   }
   .panel.active { display: flex; }
 
