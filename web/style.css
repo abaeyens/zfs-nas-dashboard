@@ -114,6 +114,23 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 #chart-sunburst { flex: 1; min-height: 0; height: auto; }
 #chart-userpie { flex: 0 0 220px; height: 220px; }
 
+/* ── Sunburst back button ─────────────────────────────────── */
+.chart-col-main { position: relative; }
+.sunburst-back {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  padding: 4px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 2;
+}
+.sunburst-back:hover { border-color: var(--accent); color: var(--accent); }
+
 /* ── Chart section titles ─────────────────────────────────── */
 .chart-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); flex-shrink: 0; }
 

@@ -105,6 +105,10 @@ let tempChart     = null;
 const DISK_COLORS = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc'];
 let diskColorMap  = {}; // by_id → color
 
+// Sunburst drill state
+let _sunburstRootStack   = [];
+let _sunburstCurrentRoot = null;
+
 function initCharts() {
   sunburstChart = echarts.init(document.getElementById('chart-sunburst'), 'dark');
   userPieChart  = echarts.init(document.getElementById('chart-userpie'),  'dark');
@@ -116,6 +120,19 @@ function initCharts() {
     tempChart     && tempChart.resize();
   });
   document.querySelectorAll('.chart').forEach(el => ro.observe(el));
+
+  // Custom drill-down: click a segment with children to zoom in
+  sunburstChart.on('click', params => {
+    if (params.componentType !== 'series') return;
+    const node = params.data;
+    if (!node || !node.children || node.children.length === 0) return;
+    _sunburstRootStack.push(_sunburstCurrentRoot);
+    renderSunburstAt(node);
+  });
+
+  document.getElementById('sunburst-back').addEventListener('click', () => {
+    if (_sunburstRootStack.length > 0) renderSunburstAt(_sunburstRootStack.pop());
+  });
 }
 
 // ── Files section ──────────────────────────────────────────────────────────
@@ -156,64 +173,85 @@ function treeToSunburst(node, colorIndex, depth) {
 }
 
 function renderSunburst(filesData) {
-  const tree = filesData && filesData.tree;
-  if (!tree || !sunburstChart) return;
+  if (!filesData || !sunburstChart) return;
+  _sunburstRootStack = [];
+
+  const tree = filesData.tree;
+  if (!tree) return;
   const root = treeToSunburst(tree, undefined, 4);
   if (!root) return;
 
   // Assign distinct colors to top-level directory children
   if (root.children) {
-    root.children.forEach((c, i) => {
-      c.itemStyle = { color: DISK_COLORS[i % DISK_COLORS.length] };
-    });
+    root.children.forEach((c, i) => { c.itemStyle = { color: DISK_COLORS[i % DISK_COLORS.length] }; });
   }
 
-  // Save directory-only total for label threshold, before adding Available/Snapshots.
-  const dirTotal = root.value || 1;
+  // Record directory-only total for the 20% threshold (before adding Avail/Snapshots)
+  root._dirTotal = root.value || 1;
 
-  // Append "Snapshots" and "Available" segments so the donut shows full pool capacity
-  const snapshotBytes = (filesData && filesData.snapshot_bytes) || 0;
-  const availBytes = (filesData && filesData.avail_bytes) || 0;
+  const snapshotBytes = filesData.snapshot_bytes || 0;
+  const availBytes    = filesData.avail_bytes    || 0;
   if (snapshotBytes > 0) {
     if (!root.children) root.children = [];
-    root.children.push({ name: 'Snapshots & Trashed', value: snapshotBytes, itemStyle: { color: '#8c8c8c' } });
+    root.children.push({ name: 'Snapshots & Trashed', value: snapshotBytes, itemStyle: { color: '#8c8c8c' }, _special: true });
     root.value = (root.value || 0) + snapshotBytes;
   }
   if (availBytes > 0) {
     if (!root.children) root.children = [];
-    root.children.push({ name: 'Available', value: availBytes, itemStyle: { color: '#2d4a2d' } });
+    root.children.push({ name: 'Available', value: availBytes, itemStyle: { color: '#2d4a2d' }, _special: true });
     root.value = (root.value || 0) + availBytes;
   }
 
-  // Hide labels for directory segments that are < 20% of actual directory data.
-  if (root.children) {
-    root.children.forEach(c => {
-      if (!c.label && c.value / dirTotal < 0.20) {
-        c.label = { show: false };
-      }
-    });
-  }
+  renderSunburstAt(root);
+}
 
+// Render the sunburst focused on rootNode (its children become the first ring).
+function renderSunburstAt(rootNode) {
+  if (!sunburstChart || !rootNode) return;
+  _sunburstCurrentRoot = rootNode;
+
+  const firstRing = rootNode.children || [];
+  // Threshold denominator: use _dirTotal if present (top-level), else sum of siblings
+  const threshold = rootNode._dirTotal ||
+    firstRing.filter(c => !c._special).reduce((s, c) => s + (c.value || 0), 0) || 1;
+
+  // Apply per-node label config so the 20% rule is re-evaluated for this ring
+  firstRing.forEach(c => {
+    if (c._special || c.value / threshold >= 0.125) {
+      c.label = { show: true, fontSize: 14, position: 'outside',
+        formatter: () => `${c.name}\n${fmtBytes(c.value)}` };
+    } else {
+      c.label = { show: false };
+    }
+  });
+
+  // Show back button only when drilled in
+  const backBtn = document.getElementById('sunburst-back');
+  if (backBtn) backBtn.style.display = _sunburstRootStack.length > 0 ? '' : 'none';
+
+  // clear() fully resets emphasis/blur state before rendering new data
+  sunburstChart.clear();
   sunburstChart.setOption({
     backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      formatter: p => `${p.name}<br/>${fmtBytes(p.value)}`,
-    },
+    tooltip: { trigger: 'item', formatter: p => `${p.name}<br/>${fmtBytes(p.value)}` },
     series: [{
       type: 'sunburst',
-      data: root.children || [root],
+      data: firstRing,
       radius: ['10%', '85%'],
+      nodeClick: false,
       label: { show: false },
       emphasis: { focus: 'ancestor' },
       levels: [
         {},
-        { r0: '10%', r: '40%', label: { show: true, fontSize: 14, position: 'outside', formatter: p => `${p.name}\n${fmtBytes(p.value)}` } },
+        { r0: '10%', r: '40%' },
         { r0: '40%', r: '65%' },
         { r0: '65%', r: '85%' },
       ],
     }],
   });
+
+  // Clear any lingering emphasis/blur state from the click that triggered the drill
+  sunburstChart.dispatchAction({ type: 'downplay' });
 }
 
 function renderUserPie(filesData) {
