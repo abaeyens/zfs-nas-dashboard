@@ -5,20 +5,21 @@ services:
     network_mode: host
     pid: "host"          # shares host /proc — needed for /proc/spl/kstat/zfs (ARC stats)
     restart: unless-stopped
-    # TODO: remove this override once main.go is fully wired; container will stay up on its own
-    command: tail -f /dev/null
     volumes:
       # Source tree — edit on host, changes visible immediately inside container
       - .:/app
       # Persistent SQLite data
       - ./data:/data
-      # Pool disks — bind-mount each drive individually (read-only)
-      - /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1:/dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1:ro
-      - /dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K2RSYV6X:/dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K2RSYV6X:ro
-      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T:/dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T:ro
-      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX22DC0A3T34:/dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX22DC0A3T34:ro
-      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX42D3173AVA:/dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX42D3173AVA:ro
-      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WXC2D903LAZ1:/dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WXC2D903LAZ1:ro
+      # Pool filesystem — read-only, needed for du/find (Files section)
+      - /vault:/vault:ro
+    devices:
+      # Raw disk devices — required for smartctl SMART data
+      - /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1
+      - /dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K2RSYV6X
+      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T
+      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX22DC0A3T34
+      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX42D3173AVA
+      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WXC2D903LAZ1
     environment:
       POOL_PATH: /vault
       POOL_NAME: vault
