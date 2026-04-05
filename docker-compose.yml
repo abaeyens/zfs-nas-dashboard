@@ -1,0 +1,37 @@
+services:
+  nas-dashboard:
+    build: .
+    container_name: nas-dashboard
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      # Source tree — edit on host, changes visible immediately inside container
+      - .:/app
+      # Persistent SQLite data
+      - ./data:/data
+      # ZFS ARC stats (read-only)
+      - /proc/spl/kstat/zfs:/proc/spl/kstat/zfs:ro
+      # Pool disks — bind-mount each drive individually (read-only)
+      - /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1:/dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1:ro
+      - /dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K2RSYV6X:/dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K2RSYV6X:ro
+      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T:/dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T:ro
+      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX22DC0A3T34:/dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX22DC0A3T34:ro
+      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX42D3173AVA:/dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX42D3173AVA:ro
+      - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WXC2D903LAZ1:/dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WXC2D903LAZ1:ro
+    environment:
+      POOL_PATH: /vault
+      POOL_NAME: vault
+      PORT: "8080"
+      SCAN_DEPTH: "5"
+      TEMP_HISTORY_HOURS: "6"
+      SMART_POLL_INTERVAL: "60"
+      FILES_REFRESH_INTERVAL: "60"
+      TEMP_WARN_C: "45"
+      TEMP_CRIT_C: "55"
+      REALLOC_WARN: "1"
+      REALLOC_CRIT: "5"
+      PENDING_WARN: "1"
+      PENDING_CRIT: "5"
+      UNCORR_WARN: "1"
+      UNCORR_CRIT: "5"
+      DATA_DIR: /data
