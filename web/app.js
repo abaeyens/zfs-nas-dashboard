@@ -112,8 +112,9 @@ function loadFiles() {
     });
 }
 
-function treeToSunburst(node, colorIndex) {
+function treeToSunburst(node, colorIndex, depth) {
   if (!node) return null;
+  if (depth !== undefined && depth <= 0) return null;
   const out = {
     name: node.name || node.path || '/',
     value: node.size_bytes,
@@ -122,9 +123,9 @@ function treeToSunburst(node, colorIndex) {
   if (colorIndex !== undefined) {
     out.itemStyle.color = DISK_COLORS[colorIndex % DISK_COLORS.length];
   }
-  if (node.children && node.children.length) {
+  if (node.children && node.children.length && (depth === undefined || depth > 1)) {
     out.children = node.children.map((c, i) =>
-      treeToSunburst(c, colorIndex !== undefined ? colorIndex : i)
+      treeToSunburst(c, colorIndex !== undefined ? colorIndex : i, depth !== undefined ? depth - 1 : undefined)
     ).filter(Boolean);
   }
   return out;
@@ -133,7 +134,7 @@ function treeToSunburst(node, colorIndex) {
 function renderSunburst(filesData) {
   const tree = filesData && filesData.tree;
   if (!tree || !sunburstChart) return;
-  const root = treeToSunburst(tree);
+  const root = treeToSunburst(tree, undefined, 4);
   if (!root) return;
 
   // Assign distinct colors to top-level directory children
@@ -142,6 +143,9 @@ function renderSunburst(filesData) {
       c.itemStyle = { color: DISK_COLORS[i % DISK_COLORS.length] };
     });
   }
+
+  // Save directory-only total for label threshold, before adding Available/Snapshots.
+  const dirTotal = root.value || 1;
 
   // Append "Snapshots" and "Available" segments so the donut shows full pool capacity
   const snapshotBytes = (filesData && filesData.snapshot_bytes) || 0;
@@ -157,6 +161,15 @@ function renderSunburst(filesData) {
     root.value = (root.value || 0) + availBytes;
   }
 
+  // Hide labels for directory segments that are < 20% of actual directory data.
+  if (root.children) {
+    root.children.forEach(c => {
+      if (!c.label && c.value / dirTotal < 0.20) {
+        c.label = { show: false };
+      }
+    });
+  }
+
   sunburstChart.setOption({
     backgroundColor: 'transparent',
     tooltip: {
@@ -166,10 +179,15 @@ function renderSunburst(filesData) {
     series: [{
       type: 'sunburst',
       data: root.children || [root],
-      radius: ['15%', '95%'],
+      radius: ['10%', '85%'],
       label: { show: false },
       emphasis: { focus: 'ancestor' },
-      levels: [{}, { r0: '15%', r: '35%' }, { r0: '35%', r: '60%' }, { r0: '60%', r: '80%' }, { r0: '80%', r: '95%' }],
+      levels: [
+        {},
+        { r0: '10%', r: '40%', label: { show: true, fontSize: 14, position: 'outside', formatter: p => `${p.name}\n${fmtBytes(p.value)}` } },
+        { r0: '40%', r: '65%' },
+        { r0: '65%', r: '85%' },
+      ],
     }],
   });
 }
@@ -189,7 +207,7 @@ function renderUserPie(filesData) {
       type: 'pie',
       data: items,
       radius: ['35%', '70%'],
-      label: { fontSize: 11 },
+      label: { fontSize: 14 },
       emphasis: { itemStyle: { shadowBlur: 6 } },
     }],
   });
