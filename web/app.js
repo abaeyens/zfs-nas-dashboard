@@ -534,6 +534,10 @@ function connectSSE() {
       } else {
         appendTempPoint(msg.disks);
       }
+    } else if (msg.type === 'files') {
+      loadFiles();
+    } else if (msg.type === 'zfs') {
+      loadZFS();
     }
   };
 

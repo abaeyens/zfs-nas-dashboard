@@ -41,9 +41,9 @@ services:
       POOL_NAME: vault
       PORT: "8080"
       SCAN_DEPTH: "5"
-      TEMP_HISTORY_HOURS: "6"
+      TEMP_HISTORY_HOURS: "12"
       SMART_POLL_INTERVAL: "60"
-      FILES_REFRESH_INTERVAL: "60"
+      FILES_REFRESH_INTERVAL: "300"
       TEMP_WARN_C: "45"
       TEMP_CRIT_C: "55"
       REALLOC_WARN: "1"

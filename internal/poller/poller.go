@@ -35,11 +35,12 @@ func New(cfg *config.Config, st *store.Store, br *broker.Broker) *Poller {
 	return &Poller{cfg: cfg, store: st, broker: br}
 }
 
-// Start launches the SMART and Files goroutines and returns immediately.
+// Start launches the SMART, Files, and ZFS goroutines and returns immediately.
 // The goroutines run until ctx is cancelled.
 func (p *Poller) Start(ctx context.Context) {
 	go p.runSmart(ctx)
 	go p.runFiles(ctx)
+	go p.runZFS(ctx)
 }
 
 // LatestSMART returns a snapshot of the most-recent SMART collection.
@@ -91,6 +92,22 @@ func (p *Poller) runFiles(ctx context.Context) {
 	}
 }
 
+// runZFS notifies connected clients to refresh ZFS data on a fixed interval.
+// The ZFS HTTP handler calls the collector directly on each request, so we
+// only need to push a lightweight notification via SSE.
+func (p *Poller) runZFS(ctx context.Context) {
+	ticker := time.NewTicker(p.cfg.FilesRefreshInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			p.broker.Broadcast([]byte(`{"type":"zfs"}`))
+		}
+	}
+}
+
 func (p *Poller) collectSmart() {
 	disks, err := collector.Smart(p.cfg, collector.DefaultRunner)
 	if err != nil {
@@ -136,5 +153,7 @@ func (p *Poller) collectFiles() {
 	p.filesMu.Lock()
 	p.files = result
 	p.filesMu.Unlock()
+
+	p.broker.Broadcast([]byte(`{"type":"files"}`))
 }
 
