@@ -114,14 +114,12 @@ tr.row-red   td { background: #2a0000; }
 .cell-green { color: var(--green); font-weight: 500; }
 .cell-amber { color: var(--amber); font-weight: 500; }
 .cell-red   { color: var(--red);   font-weight: 500; }
+.cell-model { font-size: 11px; font-family: monospace; }
 /* Temp (col 4) and Pwr-on (col 5): right-aligned */
 #disk-table th:nth-child(4), #disk-table td:nth-child(4),
 #disk-table th:nth-child(5), #disk-table td:nth-child(5) { text-align: right; }
-
-/* Realloc (col 6), Pending (col 7), Uncorr (col 8): centred */
-#disk-table th:nth-child(6), #disk-table td:nth-child(6),
-#disk-table th:nth-child(7), #disk-table td:nth-child(7),
-#disk-table th:nth-child(8), #disk-table td:nth-child(8) { text-align: center; }
+/* Sectors R,P,C (col 6): centred */
+#disk-table th:nth-child(6), #disk-table td:nth-child(6) { text-align: center; }
 
 /* ── ZFS datasets table — column alignment ───────────────── */
 /* Used (col 2), Avail (col 3), Ref (col 4): right-aligned */

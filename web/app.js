@@ -314,18 +314,17 @@ function renderDiskCards(disks) {
   let html = `<div class="table-scroll">
     <table>
       <thead><tr>
-        <th>Device</th>
-        <th>Model</th>
+        <th>Dev</th>
+        <th>ID</th>
         <th>Health</th>
         <th>Temp</th>
         <th>Pwr-on</th>
-        <th>Realloc</th>
-        <th>Pending</th>
-        <th>Uncorr</th>
+        <th>Sectors<br>R,P,C</th>
       </tr></thead>
       <tbody>`;
   disks.forEach(d => {
     const dev = d.dev ? d.dev.replace('/dev/', '') : (d.by_id || '—');
+    const serial = d.by_id ? d.by_id.slice(-12) : (d.serial || '—');
     const model = d.model || '—';
     const healthCls = d.health === 'PASSED' ? 'cell-green' : d.health === 'UNKNOWN' ? '' : 'cell-red';
     const tempCls   = 'cell-' + (statusClass(d.celsius_status) || 'none');
@@ -333,15 +332,15 @@ function renderDiskCards(disks) {
     const pendingCls = 'cell-' + (statusClass(d.pending_status) || 'none');
     const uncorrCls  = 'cell-' + (statusClass(d.uncorrectable_status) || 'none');
     const poh = d.power_on_hours != null ? Math.floor(d.power_on_hours / 24) + ' d' : '—';
+    const sectorsCls = reallocCls !== 'cell-' ? reallocCls : pendingCls !== 'cell-' ? pendingCls : uncorrCls;
+    const sectorsVal = `${d.reallocated_sectors ?? '—'},${d.pending_sectors ?? '—'},${d.uncorrectable_errors ?? '—'}`;
     html += `<tr>
         <td title="${d.by_id}">${dev}</td>
-        <td title="${d.serial || ''}">${model}</td>
+        <td class="cell-model" title="${model}">${serial}</td>
         <td class="${healthCls}">${d.health || '—'}</td>
         <td class="${tempCls}">${d.celsius != null ? d.celsius + ' °C' : '—'}</td>
         <td>${poh}</td>
-        <td class="${reallocCls}">${d.reallocated_sectors ?? '—'}</td>
-        <td class="${pendingCls}">${d.pending_sectors ?? '—'}</td>
-        <td class="${uncorrCls}">${d.uncorrectable_errors ?? '—'}</td>
+        <td class="${sectorsCls}">${sectorsVal}</td>
       </tr>`;
   });
   html += `</tbody></table></div>`;
