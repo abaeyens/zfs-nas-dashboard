@@ -1,3 +1,15 @@
+/*
+ * Responsive layout breakpoints
+ * ─────────────────────────────────────────────────────────────
+ * Breakpoint      Files col   Charts             ZFS / HW
+ * ─────────────────────────────────────────────────────────────
+ * < 800 px        full width  stacked            hidden (tabs)
+ * 800 – 1199 px   full width  side-by-side 60/40 hidden (tabs)
+ * 1200 – 1999 px  1/3         stacked            1/3 each
+ * ≥ 2000 px       50%         side-by-side 60/40 25% each
+ * ─────────────────────────────────────────────────────────────
+ */
+
 /* ── Reset & variables ─────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -193,8 +205,8 @@ tr.row-red   td { background: #2a0000; }
 .arc-stat-label { font-size: 11px; color: var(--muted); }
 .arc-stat-val { font-size: 20px; font-weight: 700; }
 
-/* ── Medium breakpoint (800 – 1599 px): 2-page layout ────── */
-@media (min-width: 800px) and (max-width: 1599px) {
+/* ── Medium breakpoint (800 – 1199 px): 2-page layout ────── */
+@media (min-width: 800px) and (max-width: 1199px) {
   .layout {
     display: flex;
     flex-direction: row;
@@ -247,16 +259,9 @@ tr.row-red   td { background: #2a0000; }
   }
 }
 
-/* ── Wide breakpoint (1600 – 1999 px): linear interpolation ─ */
-/* Proportions glide from 2/8-3/8-3/8 at 1600px to 1/3-1/3-1/3 at 2000px.
-   Columns are pixel-linear in vw, summing exactly to 100vw at every width. */
-@media (min-width: 1600px) and (max-width: 1999px) {
-  .layout {
-    grid-template-columns:
-      calc((200vw - 2000px) / 3)
-      calc(( 50vw + 1000px) / 3)
-      calc(( 50vw + 1000px) / 3);
-  }
+/* ── Wide breakpoint (1200 – 1999 px): equal thirds ─────── */
+@media (min-width: 1200px) and (max-width: 1999px) {
+  .layout { grid-template-columns: 1fr 1fr 1fr; }
 }
 
 /* ── Ultrawide breakpoint (≥ 2000 px) ────────────────────── */
