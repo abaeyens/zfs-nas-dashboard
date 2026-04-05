@@ -37,9 +37,26 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 }
 .panel:last-child { border-right: none; }
 
-/* ── Mobile nav (hidden on desktop) ───────────────────────── */
+/* ── Mobile / medium navs (hidden on desktop) ─────────────── */
 .mobile-nav { display: none; }
-
+.medium-nav { display: none; }
+/* ── Nav button styles (shared by mobile-nav and medium-nav) */
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 18px;
+  cursor: pointer;
+  transition: color .15s;
+}
+.nav-btn span { font-size: 10px; }
+.nav-btn.active { color: var(--accent); }
 /* ── Panel header ─────────────────────────────────────────── */
 .panel-header {
   display: flex;
@@ -78,6 +95,19 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .chart { width: 100%; height: 260px; }
 .chart-sm { height: 200px; }
 .chart-temps { height: 260px; }
+
+/* ── Charts row (files panel) ────────────────────────────── */
+/* Base (desktop + mobile): stacked column */
+.charts-row {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 4px;
+}
+.chart-col { display: flex; flex-direction: column; min-height: 0; }
+.chart-col-main { flex: 1; min-height: 0; }
+.chart-col-side { flex: 0 0 auto; }
 
 /* Files panel: fill viewport, charts expand to fill space */
 #panel-files { overflow-y: hidden; }
@@ -146,8 +176,87 @@ tr.row-red   td { background: #2a0000; }
 .arc-stat-label { font-size: 11px; color: var(--muted); }
 .arc-stat-val { font-size: 20px; font-weight: 700; }
 
-/* ── Mobile breakpoint ────────────────────────────────────── */
-@media (max-width: 767px) {
+/* ── Medium breakpoint (800 – 1599 px): 2-page layout ────── */
+@media (min-width: 800px) and (max-width: 1599px) {
+  .layout {
+    display: flex;
+    flex-direction: row;
+    height: calc(100vh - var(--nav-h));
+    overflow: hidden;
+  }
+
+  /* All panels hidden by default; shown per active page */
+  .panel { display: none; border-right: none; }
+
+  /* Files page: single full-width panel */
+  .layout.page-files #panel-files {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    overflow-y: hidden;
+    border-right: none;
+  }
+
+  /* System page: ZFS + Hardware side by side */
+  .layout.page-system #panel-zfs,
+  .layout.page-system #panel-hardware {
+    display: flex;
+    flex: 1;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .layout.page-system #panel-zfs { border-right: 1px solid var(--border); }
+
+  /* Files page: charts side by side (60/40) */
+  .charts-row { flex-direction: row; gap: 12px; }
+  .chart-col-main { flex: 3; min-width: 0; }
+  .chart-col-side { flex: 2; min-width: 0; }
+
+  /* User pie expands to fill available height when side by side */
+  #chart-userpie { flex: 1; height: auto; }
+
+  /* Medium bottom nav */
+  .medium-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--nav-h);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 10;
+  }
+}
+
+/* ── Wide breakpoint (1600 – 1999 px): linear interpolation ─ */
+/* Proportions glide from 2/8-3/8-3/8 at 1600px to 1/3-1/3-1/3 at 2000px.
+   Columns are pixel-linear in vw, summing exactly to 100vw at every width. */
+@media (min-width: 1600px) and (max-width: 1999px) {
+  .layout {
+    grid-template-columns:
+      calc((200vw - 2000px) / 3)
+      calc(( 50vw + 1000px) / 3)
+      calc(( 50vw + 1000px) / 3);
+  }
+}
+
+/* ── Ultrawide breakpoint (≥ 2000 px) ────────────────────── */
+@media (min-width: 2000px) {
+  /* Files gets 50 %, ZFS and Hardware 25 % each */
+  .layout { grid-template-columns: 2fr 1fr 1fr; }
+
+  /* Charts side by side within the files panel */
+  .charts-row { flex-direction: row; gap: 12px; }
+  .chart-col-main { flex: 3; min-width: 0; }
+  .chart-col-side { flex: 2; min-width: 0; }
+
+  /* User pie expands to fill the column height */
+  #chart-userpie { flex: 1; height: auto; }
+}
+
+/* ── Mobile breakpoint (< 800 px) ─────────────────────────── */
+@media (max-width: 799px) {
   .layout {
     grid-template-columns: 1fr;
     height: calc(100vh - var(--nav-h));
@@ -170,23 +279,5 @@ tr.row-red   td { background: #2a0000; }
     border-top: 1px solid var(--border);
     z-index: 10;
   }
-
-  .nav-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 10px;
-    cursor: pointer;
-    transition: color .15s;
-  }
-  .nav-btn span { font-size: 10px; }
-  .nav-btn:first-child { font-size: 18px; }
-  .nav-btn.active { color: var(--accent); }
 }
 

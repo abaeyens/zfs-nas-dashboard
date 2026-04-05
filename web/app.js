@@ -57,7 +57,7 @@ function setUpdated(id) {
 // ── Mobile nav ─────────────────────────────────────────────────────────────
 
 function initMobileNav() {
-  const buttons = document.querySelectorAll('.nav-btn');
+  const buttons = document.querySelectorAll('.mobile-nav .nav-btn');
   buttons.forEach(btn => {
     btn.addEventListener('click', () => {
       buttons.forEach(b => b.classList.remove('active'));
@@ -71,6 +71,30 @@ function initMobileNav() {
   // Activate first panel on mobile on load
   const firstPanel = document.querySelector('.panel');
   if (firstPanel) firstPanel.classList.add('active');
+}
+
+// ── Medium nav ─────────────────────────────────────────────────────────────
+
+function initMediumNav() {
+  const layout  = document.getElementById('layout');
+  const buttons = document.querySelectorAll('.medium-nav .nav-btn');
+  layout.classList.add('page-files'); // default page
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = btn.dataset.target; // 'files' or 'system'
+      layout.classList.toggle('page-files',  target === 'files');
+      layout.classList.toggle('page-system', target === 'system');
+      // Resize charts after panels become visible
+      setTimeout(() => {
+        sunburstChart && sunburstChart.resize();
+        userPieChart  && userPieChart.resize();
+        tempChart     && tempChart.resize();
+      }, 50);
+    });
+  });
 }
 
 // ── ECharts helpers ────────────────────────────────────────────────────────
@@ -488,6 +512,7 @@ document.getElementById('refresh-zfs').addEventListener('click', loadZFS);
 // ── Initialise ─────────────────────────────────────────────────────────────
 
 initMobileNav();
+initMediumNav();
 initCharts();
 loadFiles();
 loadZFS();

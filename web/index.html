@@ -18,10 +18,16 @@
         <span class="last-updated" id="files-updated"></span>
       </div>
       <div class="scanning-msg" id="files-scanning" hidden>Scanning…</div>
-      <p class="chart-title">Directory sizes</p>
-      <div id="chart-sunburst" class="chart"></div>
-      <p class="chart-title">Used space by user</p>
-      <div id="chart-userpie" class="chart chart-sm"></div>
+      <div class="charts-row">
+        <div class="chart-col chart-col-main">
+          <p class="chart-title">Directory sizes</p>
+          <div id="chart-sunburst" class="chart"></div>
+        </div>
+        <div class="chart-col chart-col-side">
+          <p class="chart-title">Used space by user</p>
+          <div id="chart-userpie" class="chart chart-sm"></div>
+        </div>
+      </div>
     </section>
 
     <!-- ── ZFS ───────────────────────────────────────── -->
@@ -71,11 +77,17 @@
 
   </div>
 
-  <!-- Mobile bottom nav -->
+  <!-- Mobile bottom nav (< 800px): 3 tabs -->
   <nav class="mobile-nav" id="mobile-nav">
     <button class="nav-btn active" data-target="files">📁<span>Files</span></button>
     <button class="nav-btn" data-target="zfs">🗄<span>ZFS</span></button>
     <button class="nav-btn" data-target="hardware">🖥<span>Hardware</span></button>
+  </nav>
+
+  <!-- Medium nav (800–1599px): 2 tabs -->
+  <nav class="medium-nav" id="medium-nav">
+    <button class="nav-btn active" data-target="files">📁<span>Files</span></button>
+    <button class="nav-btn" data-target="system">⚙<span>System</span></button>
   </nav>
 
   <!-- ECharts from CDN (pinned minor version for stability) -->
