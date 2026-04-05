@@ -69,6 +69,8 @@ function initMobileNav() {
 let sunburstChart = null;
 let userPieChart  = null;
 let tempChart     = null;
+const DISK_COLORS = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc'];
+let diskColorMap  = {}; // by_id → color
 
 function initCharts() {
   sunburstChart = echarts.init(document.getElementById('chart-sunburst'), 'dark');
@@ -301,6 +303,17 @@ function renderDiskCards(disks) {
   });
   html += `</tbody></table></div>`;
   container.innerHTML = html;
+
+  // Pre-assign colors so the device column is colored immediately,
+  // before the first renderTempChart() populates diskColorMap.
+  let colorIdx = Object.keys(diskColorMap).length;
+  disks.forEach(d => {
+    if (d.by_id && !diskColorMap[d.by_id]) {
+      diskColorMap[d.by_id] = DISK_COLORS[colorIdx % DISK_COLORS.length];
+      colorIdx++;
+    }
+  });
+  applyDiskColors();
 }
 
 function applyTempHistory(rows) {
@@ -328,12 +341,19 @@ function renderTempChart() {
   const diskIds = Object.keys(tempHistory);
   if (!diskIds.length) return;
 
+  // Assign stable colors keyed by by_id
+  diskIds.forEach((id, i) => {
+    if (!diskColorMap[id]) diskColorMap[id] = DISK_COLORS[i % DISK_COLORS.length];
+  });
+
   const series = diskIds.map(id => {
     const points = tempHistory[id];
     return {
       name: id.replace(/^.*\/([^/]+)$/, '$1'),   // last path component
       type: 'line',
       showSymbol: false,
+      color: diskColorMap[id],
+      lineStyle: { opacity: 0.7 },
       data: points.map(p => [p.ts * 1000, p.celsius]),
     };
   });
@@ -344,12 +364,23 @@ function renderTempChart() {
       const time = new Date(params[0].axisValue).toLocaleTimeString();
       return time + '<br>' + params.map(p => `${p.seriesName}: ${p.value[1]} °C`).join('<br>');
     }},
-    legend: { show: diskIds.length > 1, textStyle: { fontSize: 10 }, bottom: 0 },
-    grid: { left: 40, right: 10, top: 10, bottom: diskIds.length > 1 ? 36 : 10 },
+    legend: { show: false },
+    grid: { left: 40, right: 10, top: 10, bottom: 30 },
     xAxis: { type: 'time', axisLabel: { fontSize: 10 } },
     yAxis: { type: 'value', name: '°C', nameTextStyle: { fontSize: 10 }, axisLabel: { fontSize: 10 } },
     series,
   }, true);
+
+  applyDiskColors();
+}
+
+function applyDiskColors() {
+  document.querySelectorAll('#disk-table tbody tr').forEach(row => {
+    const cell = row.querySelector('td:first-child');
+    if (!cell) return;
+    const color = diskColorMap[cell.title];
+    if (color) { cell.style.color = color; cell.style.fontWeight = '600'; }
+  });
 }
 
 // ── SSE connection ─────────────────────────────────────────────────────────

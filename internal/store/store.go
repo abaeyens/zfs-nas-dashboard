@@ -20,9 +20,9 @@ CREATE INDEX IF NOT EXISTS temps_ts ON temps(ts);`
 
 // TempRow is a single temperature reading from the database.
 type TempRow struct {
-	TS      int64
-	Disk    string
-	Celsius float64
+	TS      int64   `json:"ts"`
+	Disk    string  `json:"disk"`
+	Celsius float64 `json:"celsius"`
 }
 
 // Store wraps a SQLite database for temperature persistence.
