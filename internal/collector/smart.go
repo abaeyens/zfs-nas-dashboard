@@ -3,9 +3,11 @@ package collector
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+	"syscall"
 
 	"github.com/abaeyens/zfs-nas-dashboard/internal/config"
 )
@@ -92,20 +94,27 @@ func discoverDevices(cfg *config.Config, run CommandRunner) ([]string, error) {
 func readDisk(cfg *config.Config, run CommandRunner, byID string) (DiskInfo, error) {
 	info := DiskInfo{ByID: byID}
 
+	// Resolve the by-id symlink to the real device node (e.g. /dev/sdc).
+	// smartctl requires the actual block device so the kernel can look it up
+	// in sysfs for device-type detection; the by-id path alone is not enough
+	// inside a container where only the target device node is bind-mounted.
+	dev := resolveDevice(byID)
+	info.Dev = dev
+
 	// -i: identity (model, serial)
-	iOut, err := run("smartctl", "-i", "-j", byID)
+	iOut, err := run("smartctl", "-i", "-j", dev)
 	if err == nil {
 		parseIdentity(iOut, &info)
 	}
 
 	// -A: attributes
-	aOut, err := run("smartctl", "-A", "-j", byID)
+	aOut, err := run("smartctl", "-A", "-j", dev)
 	if err == nil {
 		parseAttributes(aOut, cfg, &info)
 	}
 
 	// -H: overall health
-	hOut, err := run("smartctl", "-H", "-j", byID)
+	hOut, err := run("smartctl", "-H", "-j", dev)
 	if err == nil {
 		parseHealth(hOut, &info)
 	} else {
@@ -114,6 +123,46 @@ func readDisk(cfg *config.Config, run CommandRunner, byID string) (DiskInfo, err
 
 	return info, nil
 }
+
+// resolveDevice finds the canonical /dev/sdX (or /dev/nvmeXnY) that has the
+// same major:minor device number as byID.  Inside a Docker container the
+// by-id path is a plain device node (not a symlink), so path resolution is
+// not useful; matching on Rdev is the reliable approach.
+// Falls back to byID if the lookup fails for any reason.
+func resolveDevice(byID string) string {
+	fi, err := os.Stat(byID)
+	if err != nil {
+		return byID
+	}
+	st, ok := fi.Sys().(*syscall.Stat_t)
+	if !ok {
+		return byID
+	}
+	target := st.Rdev
+
+	entries, err := os.ReadDir("/dev")
+	if err != nil {
+		return byID
+	}
+	for _, e := range entries {
+		name := e.Name()
+		if !blockDevRe.MatchString(name) {
+			continue
+		}
+		fi2, err := os.Stat("/dev/" + name)
+		if err != nil {
+			continue
+		}
+		st2, ok2 := fi2.Sys().(*syscall.Stat_t)
+		if ok2 && st2.Rdev == target {
+			return "/dev/" + name
+		}
+	}
+	return byID
+}
+
+// blockDevRe matches simple top-level block device names: sda-sdzzz, nvme0n1, etc.
+var blockDevRe = regexp.MustCompile(`^(sd[a-z]+|nvme\d+n\d+|hd[a-z]+|vd[a-z]+)$`)
 
 // ---- JSON shapes ----
 

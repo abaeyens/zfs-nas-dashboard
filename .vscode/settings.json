@@ -4,6 +4,7 @@
         "docker run": true,
         "docker exec": true,
         "git add": true,
-        "git commit": true
+        "git commit": true,
+        "smartctl": true
     }
 }

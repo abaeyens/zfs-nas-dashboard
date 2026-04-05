@@ -5,10 +5,18 @@ RUN echo "deb http://deb.debian.org/debian bookworm contrib" >> /etc/apt/sources
     && apt-get install -y --no-install-recommends smartmontools zfsutils-linux \
     && rm -rf /var/lib/apt/lists/*
 
-# TODO: add non-root user (uid 1000) + sudoers rule for smartctl once ready to harden
-# RUN useradd -m -u 1000 app
-# USER app
+# Cache module downloads as a separate layer so rebuilds after code-only
+# changes don't re-download dependencies.
+WORKDIR /build
+COPY go.mod go.sum ./
+RUN go mod download
 
+# Build the binary into /usr/local/bin so it is NOT shadowed by the
+# source bind-mount at /app used in development.
+COPY . .
+RUN go build -buildvcs=false -o /usr/local/bin/nas-dashboard ./cmd/nas-dashboard
+
+# /app is the working directory; in production nothing is mounted here.
+# In development the source tree is bind-mounted at /app for live editing.
 WORKDIR /app
-
-CMD ["go", "run", "./cmd/nas-dashboard"]
+CMD ["/usr/local/bin/nas-dashboard"]

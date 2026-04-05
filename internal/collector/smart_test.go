@@ -22,15 +22,26 @@ func testConfig() *config.Config {
 }
 
 // fakeRunner returns a CommandRunner that maps "binary args..." to canned output.
+// For smartctl, the device path (last argument) is stripped before lookup so that
+// tests are not sensitive to which /dev/sdX the live resolveDevice picks.
 func fakeRunner(responses map[string]string) CommandRunner {
 	return func(name string, args ...string) ([]byte, error) {
 		key := name
 		for _, a := range args {
 			key += " " + a
 		}
-		// Try full key, then just the binary name as fallback.
 		if v, ok := responses[key]; ok {
 			return []byte(v), nil
+		}
+		// For smartctl, also try without the device-path (last arg).
+		if name == "smartctl" && len(args) > 0 {
+			keyNoDevice := name
+			for _, a := range args[:len(args)-1] {
+				keyNoDevice += " " + a
+			}
+			if v, ok := responses[keyNoDevice]; ok {
+				return []byte(v), nil
+			}
 		}
 		return []byte(""), nil
 	}
@@ -79,12 +90,9 @@ func TestSmart_StatusStrings(t *testing.T) {
 
 	run := fakeRunner(map[string]string{
 		"zpool status -v vault": zpoolStatusOutput,
-		"smartctl -i -j /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1": smartInfoOutput,
-		"smartctl -A -j /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1": smartAttrOutput,
-		"smartctl -H -j /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1": smartHealthOutput,
-		"smartctl -i -j /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T": smartInfoOutput,
-		"smartctl -A -j /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T": smartAttrOutput,
-		"smartctl -H -j /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T": smartHealthOutput,
+		"smartctl -i -j":        smartInfoOutput,
+		"smartctl -A -j":        smartAttrOutput,
+		"smartctl -H -j":        smartHealthOutput,
 	})
 
 	disks, err := Smart(cfg, run)
@@ -170,12 +178,9 @@ func TestSmart_TempFallbackAttr190(t *testing.T) {
 	cfg := testConfig()
 	run := fakeRunner(map[string]string{
 		"zpool status -v vault": zpoolStatusOutput,
-		"smartctl -i -j /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1": smartInfoOutput,
-		"smartctl -A -j /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1": attrWith190,
-		"smartctl -H -j /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1": smartHealthOutput,
-		"smartctl -i -j /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T": smartInfoOutput,
-		"smartctl -A -j /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T": attrWith190,
-		"smartctl -H -j /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T": smartHealthOutput,
+		"smartctl -i -j":        smartInfoOutput,
+		"smartctl -A -j":        attrWith190,
+		"smartctl -H -j":        smartHealthOutput,
 	})
 
 	disks, err := Smart(cfg, run)

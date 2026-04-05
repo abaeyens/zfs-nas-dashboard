@@ -5,6 +5,10 @@ services:
     network_mode: host
     pid: "host"          # shares host /proc — needed for /proc/spl/kstat/zfs (ARC stats)
     restart: unless-stopped
+    cap_add:
+      - SYS_RAWIO       # required for smartctl ATA pass-through ioctls
+    security_opt:
+      - seccomp:unconfined  # Docker's default seccomp profile blocks HDIO_* ATA ioctls
     volumes:
       # Source tree — edit on host, changes visible immediately inside container
       - .:/app
@@ -13,7 +17,17 @@ services:
       # Pool filesystem — read-only, needed for du/find (Files section)
       - /vault:/vault:ro
     devices:
-      # Raw disk devices — required for smartctl SMART data
+      # ZFS control device — required for zpool/zfs commands
+      - /dev/zfs
+      # Pool disk block devices — required for smartctl (needs the real /dev/sdX,
+      # not just the by-id symlink, for sysfs device-type detection)
+      - /dev/sda
+      - /dev/sdb
+      - /dev/sdc
+      - /dev/sdd
+      - /dev/sde
+      - /dev/sdf
+      # By-id symlinks — used as stable disk identifiers (resolves to sdX above)
       - /dev/disk/by-id/ata-WDC_WD40EFAX-68JH4N0_WD-WX32D7088AF1
       - /dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K2RSYV6X
       - /dev/disk/by-id/ata-WDC_WD40EFZX-68AWUN0_WD-WX12DA0EAU0T
