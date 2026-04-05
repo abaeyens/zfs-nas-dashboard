@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/arend/nas-dashboard/internal/config"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/config"
 )
 
 // ZFSResult holds all ZFS data returned to the HTTP layer.

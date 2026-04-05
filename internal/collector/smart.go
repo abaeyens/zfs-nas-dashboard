@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/arend/nas-dashboard/internal/config"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/config"
 )
 
 // devicePathRe validates /dev/disk/by-id/ paths from zpool status output.

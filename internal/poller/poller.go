@@ -11,10 +11,10 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/arend/nas-dashboard/internal/broker"
-	"github.com/arend/nas-dashboard/internal/collector"
-	"github.com/arend/nas-dashboard/internal/config"
-	"github.com/arend/nas-dashboard/internal/store"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/broker"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/collector"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/config"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/store"
 )
 
 // Poller holds the shared caches and co-ordinates the background goroutines.

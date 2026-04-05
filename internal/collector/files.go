@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/arend/nas-dashboard/internal/config"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/config"
 )
 
 // DirTree represents one node in the directory size tree.

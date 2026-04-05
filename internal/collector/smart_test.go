@@ -3,7 +3,7 @@ package collector
 import (
 	"testing"
 
-	"github.com/arend/nas-dashboard/internal/config"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/config"
 )
 
 func testConfig() *config.Config {

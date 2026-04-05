@@ -9,12 +9,12 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/arend/nas-dashboard/internal/broker"
-	"github.com/arend/nas-dashboard/internal/collector"
-	"github.com/arend/nas-dashboard/internal/config"
-	"github.com/arend/nas-dashboard/internal/poller"
-	"github.com/arend/nas-dashboard/internal/store"
-	"github.com/arend/nas-dashboard/web"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/broker"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/collector"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/config"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/poller"
+	"github.com/abaeyens/zfs-nas-dashboard/internal/store"
+	"github.com/abaeyens/zfs-nas-dashboard/web"
 )
 
 // NewRouter builds and returns the application router.

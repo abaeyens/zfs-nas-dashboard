@@ -1,4 +1,4 @@
-module github.com/arend/nas-dashboard
+module github.com/abaeyens/zfs-nas-dashboard
 
 go 1.24.13
 
