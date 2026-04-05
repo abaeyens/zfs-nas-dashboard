@@ -20,7 +20,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 /* ── Desktop three-column layout ──────────────────────────── */
 .layout {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 2fr 3fr 3fr;
   gap: 0;
   height: 100vh;
   overflow: hidden;
@@ -78,6 +78,14 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
 .chart { width: 100%; height: 260px; }
 .chart-sm { height: 200px; }
 .chart-temps { height: 260px; }
+
+/* Files panel: fill viewport, charts expand to fill space */
+#panel-files { overflow-y: hidden; }
+#chart-sunburst { flex: 1; min-height: 0; height: auto; }
+#chart-userpie { flex: 0 0 220px; height: 220px; }
+
+/* ── Chart section titles ─────────────────────────────────── */
+.chart-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); flex-shrink: 0; }
 
 /* ── Scanning indicator ───────────────────────────────────── */
 .scanning-msg { color: var(--muted); font-size: 12px; font-style: italic; text-align: center; padding: 20px; }
