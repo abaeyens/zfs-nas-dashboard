@@ -1,1 +1,80 @@
-<!DOCTYPE html><html><body></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAS Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Desktop: three-column grid. Mobile: one section at a time. -->
+  <div class="layout" id="layout">
+
+    <!-- ── Files ─────────────────────────────────────── -->
+    <section class="panel" id="panel-files" data-name="files">
+      <div class="panel-header">
+        <h2>Files</h2>
+        <button class="btn-refresh" id="refresh-files">Refresh</button>
+        <span class="last-updated" id="files-updated"></span>
+      </div>
+      <div class="scanning-msg" id="files-scanning" hidden>Scanning…</div>
+      <div id="chart-sunburst" class="chart"></div>
+      <div id="chart-userpie" class="chart chart-sm"></div>
+    </section>
+
+    <!-- ── ZFS ───────────────────────────────────────── -->
+    <section class="panel" id="panel-zfs" data-name="zfs">
+      <div class="panel-header">
+        <h2>ZFS</h2>
+        <button class="btn-refresh" id="refresh-zfs">Refresh</button>
+        <span class="last-updated" id="zfs-updated"></span>
+      </div>
+
+      <div class="card" id="zfs-pool-card">
+        <h3>Pool health</h3>
+        <div id="zfs-pool-content"></div>
+      </div>
+
+      <div class="card" id="zfs-arc-card">
+        <h3>ARC cache</h3>
+        <div id="zfs-arc-content"></div>
+      </div>
+
+      <div class="card">
+        <h3>Datasets</h3>
+        <div id="zfs-datasets-content" class="table-scroll"></div>
+      </div>
+
+      <div class="card">
+        <h3>Snapshots <span class="badge" id="zfs-snap-badge"></span></h3>
+        <div id="zfs-snapshots-content" class="table-scroll"></div>
+      </div>
+    </section>
+
+    <!-- ── Hardware ──────────────────────────────────── -->
+    <section class="panel" id="panel-hardware" data-name="hardware">
+      <div class="panel-header">
+        <h2>Hardware</h2>
+        <span class="last-updated" id="hw-updated"></span>
+      </div>
+      <div class="disk-grid" id="disk-cards"></div>
+      <div class="card">
+        <h3>Temperature history</h3>
+        <div id="chart-temps" class="chart chart-temps"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Mobile bottom nav -->
+  <nav class="mobile-nav" id="mobile-nav">
+    <button class="nav-btn active" data-target="files">📁<span>Files</span></button>
+    <button class="nav-btn" data-target="zfs">🗄<span>ZFS</span></button>
+    <button class="nav-btn" data-target="hardware">🖥<span>Hardware</span></button>
+  </nav>
+
+  <!-- ECharts from CDN (pinned minor version for stability) -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
