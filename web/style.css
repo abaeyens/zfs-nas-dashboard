@@ -200,7 +200,7 @@ tr.row-red   td { background: #2a0000; }
 .pool-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; font-size: 12px; }
 .pool-meta .state { font-weight: 700; }
 
-.arc-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+.arc-stats { display: flex; gap: 36px; flex-wrap: wrap; }
 .arc-stat { }
 .arc-stat-label { font-size: 11px; color: var(--muted); }
 .arc-stat-val { font-size: 20px; font-weight: 700; }

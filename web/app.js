@@ -360,7 +360,7 @@ function renderZFSDatasets(datasets) {
   const root = datasets.length ? datasets[0].name : '';
   datasets.forEach(d => {
     const depth = d.name === root ? 0 : (d.name.split('/').length - root.split('/').length);
-    const indent = '\u00a0\u00a0\u00a0\u00a0'.repeat(depth);  // nbsp indent per level
+    const indent = '\u00a0\u00a0'.repeat(depth);  // nbsp indent per level
     const label = depth === 0 ? d.name : indent + '\u2514\u00a0' + d.name.split('/').pop();
     html += `<tr>
       <td>${label}</td>
@@ -516,6 +516,18 @@ function applyDiskColors() {
   });
 }
 
+function loadHardware() {
+  fetch('/api/hardware')
+    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+    .then(data => {
+      renderDiskCards(data.disks);
+      setUpdated('hw-updated');
+      tempHistory = {};
+      applyTempHistory(data.history);
+    })
+    .catch(err => console.error('Hardware load error:', err));
+}
+
 // ── SSE connection ─────────────────────────────────────────────────────────
 
 function connectSSE() {
@@ -550,6 +562,7 @@ function connectSSE() {
 
 document.getElementById('refresh-files').addEventListener('click', loadFiles);
 document.getElementById('refresh-zfs').addEventListener('click', loadZFS);
+document.getElementById('refresh-hw').addEventListener('click', loadHardware);
 
 // ── Initialise ─────────────────────────────────────────────────────────────
 
