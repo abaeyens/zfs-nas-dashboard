@@ -16,6 +16,8 @@ services:
       - ./data:/data
       # Pool filesystem — read-only, needed for du/find (Files section)
       - /vault:/vault:ro
+      # Host passwd — read-only, so uid→username lookup works for vault files
+      - /etc/passwd:/etc/passwd:ro
     devices:
       # ZFS control device — required for zpool/zfs commands
       - /dev/zfs

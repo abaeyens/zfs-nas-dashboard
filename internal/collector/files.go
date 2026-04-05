@@ -153,8 +153,7 @@ func parentPath(path string, nodes map[string]*DirTree) *DirTree {
 // collectUserUsage runs find and tallies bytes per owner.
 // Owners with uid < 1000 are grouped into a single "system" entry.
 func collectUserUsage(cfg *config.Config, run CommandRunner) ([]UserUsage, error) {
-	maxDepth := strconv.Itoa(cfg.ScanDepth)
-	out, err := run("find", cfg.PoolPath, "-maxdepth", maxDepth, "-printf", "%U %b\n")
+	out, err := run("find", cfg.PoolPath, "-printf", "%U %b\n")
 	if err != nil {
 		return nil, fmt.Errorf("find: %w", err)
 	}

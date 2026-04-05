@@ -103,7 +103,7 @@ function loadFiles() {
     .then(data => {
       document.getElementById('files-scanning').hidden = true;
       renderSunburst(data);
-      renderUserPie(data.users);
+      renderUserPie(data);
       setUpdated('files-updated');
     })
     .catch(err => {
@@ -174,7 +174,8 @@ function renderSunburst(filesData) {
   });
 }
 
-function renderUserPie(users) {
+function renderUserPie(filesData) {
+  const users = filesData && filesData.users;
   if (!users || !userPieChart) return;
   const items = users.map(u => ({ name: u.user, value: u.size_bytes }));
   userPieChart.setOption({
