@@ -40,7 +40,10 @@
       </div>
 
       <div class="card" id="zfs-pool-card">
-        <h3>Pool health</h3>
+        <div class="card-header">
+          <h3>Pool health</h3>
+          <span id="pool-scrub-info" style="color:var(--muted);font-size:12px"></span>
+        </div>
         <div id="zfs-pool-content"></div>
       </div>
 
@@ -55,7 +58,10 @@
       </div>
 
       <div class="card">
-        <h3>Snapshots &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="badge" id="zfs-snap-badge"></span></h3>
+        <div class="card-header">
+          <h3>Snapshots</h3>
+          <span class="badge" id="zfs-snap-badge"></span>
+        </div>
         <div id="zfs-snapshots-content" class="table-scroll"></div>
       </div>
     </section>

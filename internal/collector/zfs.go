@@ -24,10 +24,11 @@ type ZFSResult struct {
 
 // Pool represents the top-level pool health.
 type Pool struct {
-	Name  string  `json:"name"`
-	State string  `json:"state"`
-	Scan  ScanInfo `json:"scan"`
-	VDevs []VDev  `json:"vdevs"`
+	Name      string   `json:"name"`
+	State     string   `json:"state"`
+	Scan      ScanInfo `json:"scan"`
+	VDevs     []VDev   `json:"vdevs"`
+	ErrorsMsg string   `json:"errors_msg"` // text after "errors:" line in zpool status
 }
 
 // ScanInfo holds the latest scrub/resilver result.
@@ -138,12 +139,23 @@ func parseZpoolStatus(output, poolName string) Pool {
 			continue
 		}
 
+		if strings.HasPrefix(trimmed, "errors:") {
+			pool.ErrorsMsg = strings.TrimSpace(strings.TrimPrefix(trimmed, "errors:"))
+			continue
+		}
+
 		if strings.HasPrefix(trimmed, "config:") {
 			inConfig = true
 			continue
 		}
 
 		if !inConfig {
+			continue
+		}
+
+		// Any top-level key (e.g. "errors:") ends the config block.
+		if strings.Contains(trimmed, ":") && !strings.HasPrefix(line, "\t") && !strings.HasPrefix(line, " ") {
+			inConfig = false
 			continue
 		}
 

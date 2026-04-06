@@ -340,21 +340,29 @@ function renderZFSPool(pool) {
   if (!pool) return;
   const el = document.getElementById('zfs-pool-content');
   const stateCls = pool.state ? pool.state.toLowerCase() : 'unknown';
-  let html = `<div class="pool-meta">
-    <span class="state">${pool.name}</span>
-    ${pill(pool.state)}
-    <span style="color:var(--muted);font-size:12px">${(() => {
-      if (!pool.scan || !pool.scan.type) return '';
-      let s = pool.scan.type + ': ' + pool.scan.state;
+  // Populate scrub info in card-header
+  const scrubEl = document.getElementById('pool-scrub-info');
+  if (scrubEl) {
+    let scrubText = '';
+    if (pool.scan && pool.scan.type) {
+      scrubText = pool.scan.type + ' ' + pool.scan.state;
       if (pool.scan.end_time) {
         const d = new Date(pool.scan.end_time);
         if (!isNaN(d)) {
           const pad = v => String(v).padStart(2, '0');
-          s += ' (' + d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ')';
+          scrubText += ' ' + d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
         }
       }
-      return s;
-    })()}</span>
+    }
+    scrubEl.textContent = scrubText;
+  }
+
+  const clean = !pool.errors_msg || /no known data errors/i.test(pool.errors_msg);
+  const errorsPill = `<span class="pill ${clean ? 'pill-green' : 'pill-red'}">${clean ? 'CLEAN' : 'DATA ERRORS'}</span>`;
+  let html = `<div class="pool-meta">
+    <span class="state">${pool.name}</span>
+    ${pill(pool.state)}
+    ${errorsPill}
   </div>`;
   if (pool.vdevs && pool.vdevs.length) {
     html += `<table>
