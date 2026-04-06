@@ -29,7 +29,30 @@ func NewRouter(cfg *config.Config, p *poller.Poller, br *broker.Broker, st *stor
 	// Serve embedded static files; fall back to index.html for SPA-style routing.
 	mux.Handle("/", http.FileServer(http.FS(web.FS)))
 
-	return mux
+	return securityHeaders(mux)
+}
+
+// securityHeaders adds defensive HTTP response headers to every response.
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		// Prevent the page from being embedded in an iframe (clickjacking).
+		h.Set("X-Frame-Options", "DENY")
+		// Stop browsers from sniffing the content-type.
+		h.Set("X-Content-Type-Options", "nosniff")
+		// No Referer header sent when navigating away.
+		h.Set("Referrer-Policy", "no-referrer")
+		// Minimal CSP: scripts only from self and the pinned jsDelivr CDN origin;
+		// no inline scripts; styles self-only; everything else blocked.
+		h.Set("Content-Security-Policy",
+			"default-src 'none'; "+
+				"script-src 'self' https://cdn.jsdelivr.net; "+
+				"style-src 'self' 'unsafe-inline'; "+
+				"img-src 'self' data:; "+
+				"connect-src 'self'; "+
+				"frame-ancestors 'none'")
+		next.ServeHTTP(w, r)
+	})
 }
 
 // onlyGET wraps a handler to return 405 for non-GET requests.
