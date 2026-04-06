@@ -98,6 +98,7 @@ To ease development, the [Makefile](Makefile) provides the following shorthands:
 | `make test` | Run all Go tests |
 | `make build` | Recompile binary inside container (does not restart) |
 | `make logs` | Follow container logs |
+| `make fmt` | Format all Go and JS/HTML/CSS files |
 | `make screenshot` | Generate screenshots into `docs/screenshots/` (requires live container) |
 
 

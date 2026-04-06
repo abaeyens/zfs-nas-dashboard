@@ -20,22 +20,22 @@ var devicePathRe = regexp.MustCompile(`^/dev/disk/by-id/(ata|nvme|wwn|scsi|usb|s
 
 // DiskInfo holds SMART data for a single disk, with pre-computed status strings.
 type DiskInfo struct {
-	Dev   string `json:"dev"`
-	ByID  string `json:"by_id"`
-	Model string `json:"model"`
+	Dev    string `json:"dev"`
+	ByID   string `json:"by_id"`
+	Model  string `json:"model"`
 	Serial string `json:"serial"`
 
 	Health string `json:"health"` // "PASSED" / "FAILED" / "UNKNOWN"
 
-	Celsius         int    `json:"celsius"`
-	CelsiusStatus   string `json:"celsius_status"`
-	PowerOnHours    int64  `json:"power_on_hours"`
-	ReallocSectors  int64  `json:"reallocated_sectors"`
-	ReallocStatus   string `json:"reallocated_status"`
-	PendingSectors  int64  `json:"pending_sectors"`
-	PendingStatus   string `json:"pending_status"`
-	UncorrErrors    int64  `json:"uncorrectable_errors"`
-	UncorrStatus    string `json:"uncorrectable_status"`
+	Celsius        int    `json:"celsius"`
+	CelsiusStatus  string `json:"celsius_status"`
+	PowerOnHours   int64  `json:"power_on_hours"`
+	ReallocSectors int64  `json:"reallocated_sectors"`
+	ReallocStatus  string `json:"reallocated_status"`
+	PendingSectors int64  `json:"pending_sectors"`
+	PendingStatus  string `json:"pending_status"`
+	UncorrErrors   int64  `json:"uncorrectable_errors"`
+	UncorrStatus   string `json:"uncorrectable_status"`
 }
 
 // Smart discovers all disks in the ZFS pool and returns their SMART data.
@@ -172,7 +172,7 @@ type smartctlIdentityJSON struct {
 }
 
 type smartctlAttrJSON struct {
-	ID  int    `json:"id"`
+	ID  int `json:"id"`
 	Raw struct {
 		Value int64 `json:"value"`
 	} `json:"raw"`

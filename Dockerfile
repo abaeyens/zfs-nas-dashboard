@@ -2,7 +2,8 @@ FROM golang:1.24-bookworm
 
 RUN echo "deb http://deb.debian.org/debian bookworm contrib" >> /etc/apt/sources.list \
     && apt-get update \
-    && apt-get install -y --no-install-recommends smartmontools zfsutils-linux \
+    && apt-get install -y --no-install-recommends smartmontools zfsutils-linux nodejs npm \
+    && npm install -g prettier \
     && rm -rf /var/lib/apt/lists/*
 
 # Cache module downloads as a separate layer so rebuilds after code-only

@@ -123,10 +123,10 @@ func TestSmart_StatusStrings(t *testing.T) {
 
 func TestSmart_TempThresholds(t *testing.T) {
 	cases := []struct {
-		temp   int
-		warn   int
-		crit   int
-		want   string
+		temp int
+		warn int
+		crit int
+		want string
 	}{
 		{30, 45, 55, "green"},
 		{45, 45, 55, "amber"},

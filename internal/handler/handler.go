@@ -150,5 +150,3 @@ func handleEvents(br *broker.Broker, p *poller.Poller, cfg *config.Config, st *s
 		}
 	}
 }
-
-

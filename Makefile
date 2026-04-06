@@ -1,7 +1,7 @@
 CONTAINER        := zfs-nas-dashboard
 SCREENSHOT_IMAGE := zfs-nas-dashboard-screenshot
 
-.PHONY: up down shell test logs build screenshot
+.PHONY: up down shell test logs build screenshot fmt
 
 up:
 	docker compose up -d
@@ -20,6 +20,10 @@ logs:
 
 build:
 	docker exec $(CONTAINER) go build -buildvcs=false ./cmd/nas-dashboard
+
+fmt:
+	docker exec $(CONTAINER) gofmt -w /app/internal /app/cmd
+	docker exec $(CONTAINER) prettier --write /app/web/
 
 screenshot:
 	docker build -f Dockerfile.screenshot -t $(SCREENSHOT_IMAGE) .

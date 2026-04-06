@@ -156,4 +156,3 @@ func (p *Poller) collectFiles() {
 
 	p.broker.Broadcast([]byte(`{"type":"files"}`))
 }
-

@@ -58,4 +58,3 @@ func main() {
 		log.Fatal().Err(err).Msg("server")
 	}
 }
-

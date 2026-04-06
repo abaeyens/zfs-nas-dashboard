@@ -72,4 +72,3 @@ func (b *Broker) Broadcast(msg []byte) {
 		b.mu.Unlock()
 	}
 }
-

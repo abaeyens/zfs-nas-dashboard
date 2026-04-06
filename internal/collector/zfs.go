@@ -33,8 +33,8 @@ type Pool struct {
 
 // ScanInfo holds the latest scrub/resilver result.
 type ScanInfo struct {
-	Type    string `json:"type"`    // "scrub" / "resilver"
-	State   string `json:"state"`   // "finished" / "in_progress" / "none"
+	Type    string `json:"type"`     // "scrub" / "resilver"
+	State   string `json:"state"`    // "finished" / "in_progress" / "none"
 	EndTime string `json:"end_time"` // free-form from zpool output
 	Errors  int    `json:"errors"`
 }
@@ -50,28 +50,28 @@ type VDev struct {
 
 // Dataset is a single ZFS dataset.
 type Dataset struct {
-	Name         string  `json:"name"`
-	UsedBytes    int64   `json:"used_bytes"`
-	AvailBytes   int64   `json:"avail_bytes"`
-	ReferBytes   int64   `json:"refer_bytes"`
+	Name          string  `json:"name"`
+	UsedBytes     int64   `json:"used_bytes"`
+	AvailBytes    int64   `json:"avail_bytes"`
+	ReferBytes    int64   `json:"refer_bytes"`
 	CompressRatio float64 `json:"compress_ratio"`
-	Compression  string  `json:"compression"`
+	Compression   string  `json:"compression"`
 }
 
 // Snapshot is a single ZFS snapshot.
 type Snapshot struct {
-	Name        string `json:"name"`
-	Dataset     string `json:"dataset"`
-	Creation    string `json:"creation"`
-	UsedBytes   int64  `json:"used_bytes"`
+	Name      string `json:"name"`
+	Dataset   string `json:"dataset"`
+	Creation  string `json:"creation"`
+	UsedBytes int64  `json:"used_bytes"`
 }
 
 // ARCStats holds ARC hit rate and size.
 type ARCStats struct {
-	HitRate    float64 `json:"hit_rate"`
-	SizeBytes  int64   `json:"size_bytes"`
-	MaxBytes   int64   `json:"max_bytes"`
-	Status     string  `json:"status"` // green / amber / red
+	HitRate   float64 `json:"hit_rate"`
+	SizeBytes int64   `json:"size_bytes"`
+	MaxBytes  int64   `json:"max_bytes"`
+	Status    string  `json:"status"` // green / amber / red
 }
 
 // ZFS collects all ZFS data.
