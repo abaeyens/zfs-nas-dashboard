@@ -42,11 +42,10 @@ func securityHeaders(next http.Handler) http.Handler {
 		h.Set("X-Content-Type-Options", "nosniff")
 		// No Referer header sent when navigating away.
 		h.Set("Referrer-Policy", "no-referrer")
-		// Minimal CSP: scripts only from self and the pinned jsDelivr CDN origin;
-		// no inline scripts; styles self-only; everything else blocked.
+		// Minimal CSP: scripts and styles self-only; everything else blocked.
 		h.Set("Content-Security-Policy",
 			"default-src 'none'; "+
-				"script-src 'self' https://cdn.jsdelivr.net; "+
+				"script-src 'self'; "+
 				"style-src 'self' 'unsafe-inline'; "+
 				"img-src 'self' data:; "+
 				"connect-src 'self'; "+
