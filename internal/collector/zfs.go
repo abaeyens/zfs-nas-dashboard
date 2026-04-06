@@ -67,10 +67,10 @@ type Snapshot struct {
 
 // ARCStats holds ARC hit rate and size.
 type ARCStats struct {
-	HitRate      float64 `json:"hit_rate"`
-	SizeBytes    int64   `json:"size_bytes"`
-	TotalRAMBytes int64  `json:"total_ram_bytes"`
-	Status       string  `json:"status"` // green / amber / red
+	HitRate    float64 `json:"hit_rate"`
+	SizeBytes  int64   `json:"size_bytes"`
+	MaxBytes   int64   `json:"max_bytes"`
+	Status     string  `json:"status"` // green / amber / red
 }
 
 // ZFS collects all ZFS data.
@@ -292,15 +292,10 @@ func parseARC(data []byte) (ARCStats, error) {
 	hits := values["hits"]
 	misses := values["misses"]
 	size := values["size"]
+	cMax := values["c_max"]
 	var hitRate float64
 	if total := hits + misses; total > 0 {
 		hitRate = float64(hits) / float64(total)
-	}
-
-	// Read total RAM from /proc/meminfo.
-	var totalRAM int64
-	if mem, err := os.ReadFile("/proc/meminfo"); err == nil {
-		totalRAM = parseTotalRAM(mem)
 	}
 
 	status := "red"
@@ -312,26 +307,9 @@ func parseARC(data []byte) (ARCStats, error) {
 	}
 
 	return ARCStats{
-		HitRate:       hitRate,
-		SizeBytes:     size,
-		TotalRAMBytes: totalRAM,
-		Status:        status,
+		HitRate:   hitRate,
+		SizeBytes: size,
+		MaxBytes:  cMax,
+		Status:    status,
 	}, nil
-}
-
-func parseTotalRAM(data []byte) int64 {
-	scanner := bufio.NewScanner(bytes.NewReader(data))
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "MemTotal:") {
-			fields := strings.Fields(line)
-			if len(fields) >= 2 {
-				kb, err := strconv.ParseInt(fields[1], 10, 64)
-				if err == nil {
-					return kb * 1024
-				}
-			}
-		}
-	}
-	return 0
 }

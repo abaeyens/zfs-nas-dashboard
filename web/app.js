@@ -393,7 +393,7 @@ function renderZFSARC(arc) {
     </div>
     <div class="arc-stat">
       <div class="arc-stat-label">Max ARC</div>
-      <div class="arc-stat-val">${fmtBytes(arc.total_ram_bytes)}</div>
+      <div class="arc-stat-val">${fmtBytes(arc.max_bytes)}</div>
     </div>
   </div>`;
 }
