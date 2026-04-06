@@ -107,8 +107,49 @@ function initMediumNav() {
 let sunburstChart = null;
 let userPieChart  = null;
 let tempChart     = null;
-const DISK_COLORS = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc'];
-let diskColorMap  = {}; // by_id → color
+// Fixed palette for sunburst/directory colors (original ECharts hex palette)
+const PALETTE = ['#5470c6','#91cc75','#fac858','#ee6666','#73c0de','#3ba272','#fc8452','#9a60b4','#ea7ccc'];
+
+// Generate n disk colors sweeping from red (29°) to reddish-blue (275°)
+function diskColorsFor(n) {
+  const count = n || 1;
+  const startH = 29, endH = 255;
+  return Array.from({length: count}, (_, i) => {
+    const h = count === 1 ? startH : Math.round(startH + i * (endH - startH) / (count - 1));
+    return `oklch(78% 0.37 ${h}deg)`;
+  });
+}
+
+// Convert an oklch(...) string to rgba(r,g,b,alpha) so table text matches
+// the chart line color at the same opacity.
+function oklchToRgba(oklchStr, alpha) {
+  const m = oklchStr.match(/oklch\(([\d.]+)%\s+([\d.]+)\s+([\d.]+)deg\)/);
+  if (!m) return oklchStr;
+  const L = +m[1] / 100, C = +m[2], H = +m[3] * Math.PI / 180;
+  // OKLCH → OKLAB
+  const a = C * Math.cos(H), b = C * Math.sin(H);
+  // OKLAB → LMS (cubed)
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+  const lv = l_ * l_ * l_, mv = m_ * m_ * m_, sv = s_ * s_ * s_;
+  // LMS → linear sRGB
+  const lr =  4.0767416621 * lv - 3.3077115913 * mv + 0.2309699292 * sv;
+  const lg = -1.2684380046 * lv + 2.6097574011 * mv - 0.3413193965 * sv;
+  const lb = -0.0041960863 * lv - 0.7034186147 * mv + 1.7076147010 * sv;
+  // Linear sRGB → gamma-corrected sRGB
+  const toSRGB = c => {
+    c = Math.max(0, Math.min(1, c));
+    return c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  };
+  const r = Math.round(toSRGB(lr) * 255);
+  const g = Math.round(toSRGB(lg) * 255);
+  const bv = Math.round(toSRGB(lb) * 255);
+  return `rgba(${r},${g},${bv},${alpha})`;
+}
+let diskColorMap  = {}; // by_id → oklch color string
+let byIdToDevMap  = {}; // by_id → dev short name (e.g. 'sda')
+let smartPollIntervalS = 60; // updated from server on init/hardware load
 
 // Sunburst drill state
 let _sunburstRootStack   = [];
@@ -167,7 +208,7 @@ function treeToSunburst(node, colorIndex, depth) {
     itemStyle: {},
   };
   if (colorIndex !== undefined) {
-    out.itemStyle.color = DISK_COLORS[colorIndex % DISK_COLORS.length];
+    out.itemStyle.color = PALETTE[colorIndex % PALETTE.length];
   }
   if (node.children && node.children.length && (depth === undefined || depth > 1)) {
     out.children = node.children.map((c, i) =>
@@ -188,7 +229,7 @@ function renderSunburst(filesData) {
 
   // Assign distinct colors to top-level directory children
   if (root.children) {
-    root.children.forEach((c, i) => { c.itemStyle = { color: DISK_COLORS[i % DISK_COLORS.length] }; });
+    root.children.forEach((c, i) => { c.itemStyle = { color: PALETTE[i % PALETTE.length] }; });
   }
 
   // Record directory-only total for the 20% threshold (before adding Avail/Snapshots)
@@ -406,6 +447,10 @@ let tempHistory = {};
 
 function renderDiskCards(disks) {
   if (!disks) return;
+  // Sort by dev name for consistent ordering
+  const sorted = [...disks].sort((a, b) =>
+    (a.dev || a.by_id || '').localeCompare(b.dev || b.by_id || ''));
+
   const container = document.getElementById('disk-table');
   let html = `<div class="table-scroll">
     <table>
@@ -418,7 +463,7 @@ function renderDiskCards(disks) {
         <th>Sectors<br>R,P,C</th>
       </tr></thead>
       <tbody>`;
-  disks.forEach(d => {
+  sorted.forEach(d => {
     const dev = d.dev ? d.dev.replace('/dev/', '') : (d.by_id || '—');
     const serial = d.by_id ? d.by_id.slice(-12) : (d.serial || '—');
     const model = d.model || '—';
@@ -442,13 +487,14 @@ function renderDiskCards(disks) {
   html += `</tbody></table></div>`;
   container.innerHTML = html;
 
-  // Pre-assign colors so the device column is colored immediately,
-  // before the first renderTempChart() populates diskColorMap.
-  let colorIdx = Object.keys(diskColorMap).length;
-  disks.forEach(d => {
-    if (d.by_id && !diskColorMap[d.by_id]) {
-      diskColorMap[d.by_id] = DISK_COLORS[colorIdx % DISK_COLORS.length];
-      colorIdx++;
+  // Assign colors based on sorted order so hues are evenly spaced across all disks
+  diskColorMap = {};
+  byIdToDevMap = {};
+  const colors = diskColorsFor(sorted.length);
+  sorted.forEach((d, i) => {
+    if (d.by_id) {
+      diskColorMap[d.by_id] = colors[i];
+      byIdToDevMap[d.by_id] = (d.dev || d.by_id).replace('/dev/', '');
     }
   });
   applyDiskColors();
@@ -479,22 +525,36 @@ function renderTempChart() {
   const diskIds = Object.keys(tempHistory);
   if (!diskIds.length) return;
 
-  // Assign stable colors keyed by by_id
+  // Assign stable colors keyed by by_id (fallback if renderDiskCards hasn't run)
   diskIds.forEach((id, i) => {
-    if (!diskColorMap[id]) diskColorMap[id] = DISK_COLORS[i % DISK_COLORS.length];
+    if (!diskColorMap[id]) diskColorMap[id] = PALETTE[i % PALETTE.length];
   });
 
   const series = diskIds.map(id => {
-    const points = tempHistory[id];
+    const sorted = tempHistory[id].slice().sort((a, b) => a.ts - b.ts);
+    const gapMs  = smartPollIntervalS * 2.5 * 1000;
+    const data   = [];
+    sorted.forEach((p, i) => {
+      if (i > 0 && (p.ts - sorted[i - 1].ts) * 1000 > gapMs) {
+        data.push([p.ts * 1000 - 1, null]); // break the line
+      }
+      data.push([p.ts * 1000, p.celsius]);
+    });
     return {
-      name: id.replace(/^.*\/([^/]+)$/, '$1'),   // last path component
+      name: byIdToDevMap[id] || id.replace(/^.*\/([^/]+)$/, '$1'),
       type: 'line',
       showSymbol: false,
+      connectNulls: false,
+      emphasis: { disabled: true },
       color: diskColorMap[id],
       lineStyle: { opacity: 0.7 },
-      data: points.map(p => [p.ts * 1000, p.celsius]),
+      data,
     };
   });
+
+  const allTemps = Object.values(tempHistory).flat().map(p => p.celsius);
+  const yMin = Math.min(...allTemps) - 1;
+  const yMax = Math.max(...allTemps) + 1;
 
   tempChart.setOption({
     backgroundColor: 'transparent',
@@ -503,9 +563,9 @@ function renderTempChart() {
       return time + '<br>' + params.map(p => `${p.seriesName}: ${p.value[1]} °C`).join('<br>');
     }},
     legend: { show: false },
-    grid: { left: 40, right: 10, top: 10, bottom: 30 },
-    xAxis: { type: 'time', axisLabel: { fontSize: 10 } },
-    yAxis: { type: 'value', name: '°C', nameTextStyle: { fontSize: 10 }, axisLabel: { fontSize: 10 } },
+    grid: { left: 40, right: 10, top: 10, bottom: 38 },
+    xAxis: { type: 'time', name: 'time [h]', nameLocation: 'middle', nameGap: 25, nameTextStyle: { fontSize: 12 }, axisLabel: { fontSize: 10, formatter: val => String(new Date(val).getHours()) } },
+    yAxis: { type: 'value', name: '°C', nameTextStyle: { fontSize: 10 }, axisLabel: { fontSize: 10 }, min: yMin, max: yMax },
     series,
   }, true);
 
@@ -517,7 +577,7 @@ function applyDiskColors() {
     const cell = row.querySelector('td:first-child');
     if (!cell) return;
     const color = diskColorMap[cell.title];
-    if (color) { cell.style.color = color; cell.style.fontWeight = '600'; }
+    if (color) { cell.style.color = oklchToRgba(color, 0.7); cell.style.fontWeight = '600'; }
   });
 }
 
@@ -525,6 +585,7 @@ function loadHardware() {
   fetch('/api/hardware')
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(data => {
+      if (data.poll_interval_s) smartPollIntervalS = data.poll_interval_s;
       renderDiskCards(data.disks);
       setUpdated('hw-updated');
       tempHistory = {};
@@ -543,6 +604,7 @@ function connectSSE() {
     try { msg = JSON.parse(evt.data); } catch { return; }
 
     if (msg.type === 'init' || msg.type === 'smart') {
+      if (msg.poll_interval_s) smartPollIntervalS = msg.poll_interval_s;
       renderDiskCards(msg.disks);
       setUpdated('hw-updated');
       if (msg.type === 'init' && msg.history) {
