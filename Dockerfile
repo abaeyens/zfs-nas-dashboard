@@ -1,4 +1,4 @@
-FROM golang:1.24-bookworm
+FROM golang:1.26.1-bookworm
 
 RUN echo "deb http://deb.debian.org/debian bookworm contrib" >> /etc/apt/sources.list \
     && apt-get update \
