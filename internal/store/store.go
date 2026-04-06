@@ -49,7 +49,9 @@ func Open(dataDir string) (*Store, error) {
 	}
 
 	// Prune at startup then daily.
-	s.Prune(time.Now().Add(-7 * 24 * time.Hour))
+	if err := s.Prune(time.Now().Add(-7 * 24 * time.Hour)); err != nil {
+		log.Warn().Err(err).Msg("store: initial prune")
+	}
 	go s.dailyPrune()
 
 	return s, nil
@@ -61,12 +63,16 @@ func open(path string) (*Store, error) {
 		return nil, err
 	}
 	if _, err := db.Exec(schema); err != nil {
-		db.Close()
+		if closeErr := db.Close(); closeErr != nil {
+			log.Warn().Err(closeErr).Msg("store: close after schema error")
+		}
 		return nil, err
 	}
 	// Verify the DB is readable/writable (catches corrupt files that Open accepts).
 	if _, err := db.Exec("SELECT 1 FROM temps LIMIT 1"); err != nil {
-		db.Close()
+		if closeErr := db.Close(); closeErr != nil {
+			log.Warn().Err(closeErr).Msg("store: close after verify error")
+		}
 		return nil, err
 	}
 	return &Store{db: db, path: path}, nil
