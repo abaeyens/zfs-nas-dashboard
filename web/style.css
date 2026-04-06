@@ -520,6 +520,7 @@ tr.row-red td {
     display: none;
     height: calc(100vh - var(--nav-h));
     height: calc(100dvh - var(--nav-h));
+    border-right: none;
   }
   .panel.active {
     display: flex;
