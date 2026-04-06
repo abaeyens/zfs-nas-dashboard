@@ -56,9 +56,10 @@ function setUpdated(id) {
 
 // ── Mobile nav ─────────────────────────────────────────────────────────────
 
+const MOBILE_TABS = ['files', 'zfs', 'hardware'];
+
 function initMobileNav() {
   const buttons = document.querySelectorAll('.mobile-nav .nav-btn');
-  const saved   = sessionStorage.getItem('mobileTab') || 'files';
 
   function activateMobile(target) {
     buttons.forEach(b => b.classList.toggle('active', b.dataset.target === target));
@@ -69,18 +70,34 @@ function initMobileNav() {
   }
 
   buttons.forEach(btn => {
-    btn.addEventListener('click', () => activateMobile(btn.dataset.target));
+    btn.addEventListener('click', () => {
+      location.hash = btn.dataset.target;
+    });
   });
 
-  activateMobile(saved);
+  window.addEventListener('hashchange', () => {
+    const hash = location.hash.slice(1);
+    if (MOBILE_TABS.includes(hash)) activateMobile(hash);
+  });
+
+  const hash = location.hash.slice(1);
+  const initial = MOBILE_TABS.includes(hash) ? hash : (sessionStorage.getItem('mobileTab') || 'files');
+  history.replaceState(null, '', '#' + initial);
+  activateMobile(initial);
 }
 
 // ── Medium nav ─────────────────────────────────────────────────────────────
 
+// Maps a canonical panel hash (files/zfs/hardware) to a medium-nav page target.
+function hashToMediumTarget(hash) {
+  if (hash === 'files') return 'files';
+  if (hash === 'zfs' || hash === 'hardware') return 'system';
+  return null;
+}
+
 function initMediumNav() {
   const layout  = document.getElementById('layout');
   const buttons = document.querySelectorAll('.medium-nav .nav-btn');
-  const saved   = sessionStorage.getItem('mediumPage') || 'files';
 
   function activateMedium(target) {
     buttons.forEach(b => b.classList.toggle('active', b.dataset.target === target));
@@ -96,10 +113,20 @@ function initMediumNav() {
   }
 
   buttons.forEach(btn => {
-    btn.addEventListener('click', () => activateMedium(btn.dataset.target));
+    // System button writes #zfs as the canonical hash for the system page.
+    const hash = btn.dataset.target === 'system' ? 'zfs' : btn.dataset.target;
+    btn.addEventListener('click', () => { location.hash = hash; });
   });
 
-  activateMedium(saved);
+  window.addEventListener('hashchange', () => {
+    const target = hashToMediumTarget(location.hash.slice(1));
+    if (target) activateMedium(target);
+  });
+
+  const hash = location.hash.slice(1);
+  const fromHash = hashToMediumTarget(hash);
+  const initial = fromHash || sessionStorage.getItem('mediumPage') || 'files';
+  activateMedium(initial);
 }
 
 // ── ECharts helpers ────────────────────────────────────────────────────────
