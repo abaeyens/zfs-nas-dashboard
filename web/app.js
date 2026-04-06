@@ -10,6 +10,17 @@
 
 // ── Utilities ──────────────────────────────────────────────────────────────
 
+// esc sanitises a value for safe inclusion in HTML attribute values and
+// element text content, preventing stored XSS from data returned by the API.
+function esc(val) {
+  return String(val ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function fmtBytes(n) {
   if (n == null) return '—';
   const u = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -54,7 +65,7 @@ function pill(status) {
               : status === 'faulted'
                 ? 'pill-faulted'
                 : 'pill-amber';
-  return `<span class="pill ${cls}">${status.toUpperCase()}</span>`;
+  return `<span class="pill ${cls}">${esc(status.toUpperCase())}</span>`;
 }
 
 function statusClass(s) {
@@ -443,7 +454,7 @@ function renderZFSPool(pool) {
   const clean = !pool.errors_msg || /no known data errors/i.test(pool.errors_msg);
   const errorsPill = `<span class="pill ${clean ? 'pill-green' : 'pill-red'}">${clean ? 'CLEAN' : 'DATA ERRORS'}</span>`;
   let html = `<div class="pool-meta">
-    <span class="state">${pool.name}</span>
+    <span class="state">${esc(pool.name)}</span>
     ${pill(pool.state)}
     ${errorsPill}
   </div>`;
@@ -455,10 +466,10 @@ function renderZFSPool(pool) {
       const totalErr = (v.read_errors || 0) + (v.write_errors || 0) + (v.cksum_errors || 0);
       const rowCls = totalErr > 0 ? 'row-amber' : '';
       const errCls = totalErr === 0 ? 'cell-green' : totalErr < 5 ? 'cell-amber' : 'cell-red';
-      const vdevName = v.name.length > 12 ? '*' + v.name.slice(-12) : v.name;
+      const vdevName = v.name.length > 12 ? '*' + esc(v.name.slice(-12)) : esc(v.name);
       const errors = `${v.read_errors}, ${v.write_errors}, ${v.cksum_errors}`;
       html += `<tr class="${rowCls}">
-        <td title="${v.name}">${vdevName}</td>
+        <td title="${esc(v.name)}">${vdevName}</td>
         <td>${pill(v.state)}</td>
         <td class="${errCls}">${errors}</td>
       </tr>`;
@@ -500,14 +511,15 @@ function renderZFSDatasets(datasets) {
   datasets.forEach((d) => {
     const depth = d.name === root ? 0 : d.name.split('/').length - root.split('/').length;
     const indent = '\u00a0\u00a0'.repeat(depth); // nbsp indent per level
-    const label = depth === 0 ? d.name : indent + '\u2514\u00a0' + d.name.split('/').pop();
+    const label =
+      depth === 0 ? esc(d.name) : indent + '\u2514\u00a0' + esc(d.name.split('/').pop());
     html += `<tr>
       <td>${label}</td>
       <td>${fmtGB(d.used_bytes)}</td>
       <td>${fmtGB(d.avail_bytes)}</td>
       <td>${fmtGB(d.refer_bytes)}</td>
       <td>${d.compress_ratio ? d.compress_ratio.toFixed(2) + 'x' : '\u2014'}</td>
-      <td>${d.compression || '\u2014'}</td>
+      <td>${esc(d.compression) || '\u2014'}</td>
     </tr>`;
   });
   html += `</tbody></table>`;
@@ -524,7 +536,7 @@ function renderZFSSnapshots(snaps, count, totalBytes) {
     <tbody>`;
   snaps.forEach((s) => {
     html += `<tr>
-      <td>${s.name}</td>
+      <td>${esc(s.name)}</td>
       <td>${fmtTime(s.creation)}</td>
       <td>${fmtBytes(s.used_bytes)}</td>
     </tr>`;
@@ -572,9 +584,9 @@ function renderDiskCards(disks) {
       reallocCls !== 'cell-' ? reallocCls : pendingCls !== 'cell-' ? pendingCls : uncorrCls;
     const sectorsVal = `${d.reallocated_sectors ?? '—'}, ${d.pending_sectors ?? '—'}, ${d.uncorrectable_errors ?? '—'}`;
     html += `<tr>
-        <td title="${d.by_id}">${dev}</td>
-        <td class="cell-model" title="${model}">${serial}</td>
-        <td class="${healthCls}">${d.health || '—'}</td>
+        <td title="${esc(d.by_id)}">${esc(dev)}</td>
+        <td class="cell-model" title="${esc(model)}">${esc(serial)}</td>
+        <td class="${healthCls}">${esc(d.health) || '—'}</td>
         <td class="${tempCls}">${d.celsius != null ? d.celsius + ' °C' : '—'}</td>
         <td>${poh}</td>
         <td class="${sectorsCls}">${sectorsVal}</td>
