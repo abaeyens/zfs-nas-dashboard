@@ -1,6 +1,11 @@
 # zfs-nas-dashboard
 
 [![CI](https://github.com/abaeyens/zfs-nas-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/abaeyens/zfs-nas-dashboard/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/abaeyens/zfs-nas-dashboard)](https://goreportcard.com/report/github.com/abaeyens/zfs-nas-dashboard)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE.txt)
+[![Go](https://img.shields.io/badge/go-1.24-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/)
+![Platform](https://img.shields.io/badge/platform-linux-lightgrey?logo=linux&logoColor=white)
 
 Read-only browser dashboard for a ZFS NAS.
 Three panes — **Files**, **ZFS**, **Hardware** —
@@ -100,7 +105,7 @@ To ease development, the [Makefile](Makefile) provides the following shorthands:
 Go backend serving a HTML/CSS/JS frontend.
 The frontend gets its data from the REST endpoints exposed by the backend,
 and the backend notifies the frontend of new data being available using SSE.
-See [architecture.md](architecture.md) for the component design and data-flow diagram.
+See [architecture.md](docs/architecture.md) for the component design and data-flow diagram.
 
 | Package | Role |
 |---|---|
