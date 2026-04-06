@@ -343,7 +343,7 @@ function renderUserPie(filesData) {
       type: 'pie',
       data: items,
       radius: ['35%', '70%'],
-      label: { fontSize: 14 },
+      label: { fontSize: 14, formatter: p => `${p.name}\n${fmtBytes(p.value)}` },
       emphasis: { itemStyle: { shadowBlur: 6 } },
     }],
   });
