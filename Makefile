@@ -27,3 +27,11 @@ screenshot:
 	docker run --rm --network host \
 	  -v "$(PWD)/docs/screenshots:/app/docs/screenshots" \
 	  $(SCREENSHOT_IMAGE)
+	python3 -c "\
+from PIL import Image; \
+imgs = [Image.open('docs/screenshots/mobile-{}.png'.format(t)) for t in ('files','zfs','hardware')]; \
+gap = 20; w, h = imgs[0].size; \
+out = Image.new('RGBA', (w*3 + gap*2, h), (0,0,0,0)); \
+[out.paste(im, (i*(w+gap), 0)) for i, im in enumerate(imgs)]; \
+out.save('docs/screenshots/mobile-all.png', compress_level=9) \
+"

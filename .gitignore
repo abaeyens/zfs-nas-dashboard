@@ -1,2 +1,5 @@
 .vscode/
-docs/screenshots/
+docs/screenshots/desktop.png
+docs/screenshots/mobile-hardware.png
+docs/screenshots/mobile-zfs.png
+docs/screenshots/mobile-files.png
