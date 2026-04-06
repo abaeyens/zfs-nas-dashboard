@@ -361,14 +361,15 @@ function renderZFSPool(pool) {
       <thead><tr><th>VDev</th><th>State</th><th>Errors<br>R,W,Ck</th></tr></thead>
       <tbody>`;
     pool.vdevs.forEach(v => {
-      const hasErr = v.read_errors || v.write_errors || v.cksum_errors;
-      const rowCls = hasErr > 0 ? 'row-amber' : '';
+      const totalErr = (v.read_errors || 0) + (v.write_errors || 0) + (v.cksum_errors || 0);
+      const rowCls = totalErr > 0 ? 'row-amber' : '';
+      const errCls = totalErr === 0 ? 'cell-green' : totalErr < 5 ? 'cell-amber' : 'cell-red';
       const vdevName = v.name.length > 12 ? '*' + v.name.slice(-12) : v.name;
       const errors = `${v.read_errors}, ${v.write_errors}, ${v.cksum_errors}`;
       html += `<tr class="${rowCls}">
         <td title="${v.name}">${vdevName}</td>
         <td>${pill(v.state)}</td>
-        <td>${errors}</td>
+        <td class="${errCls}">${errors}</td>
       </tr>`;
     });
     html += `</tbody></table>`;
