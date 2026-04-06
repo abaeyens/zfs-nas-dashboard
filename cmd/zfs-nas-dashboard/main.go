@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -41,8 +42,11 @@ func main() {
 
 	router := handler.NewRouter(cfg, p, br, st)
 	srv := &http.Server{
-		Addr:    ":" + cfg.Port,
-		Handler: router,
+		Addr:              ":" + cfg.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+		WriteTimeout:      0, // SSE streams are long-lived; disabling write timeout
+		IdleTimeout:       120 * time.Second,
 	}
 
 	go func() {
