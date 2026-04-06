@@ -19,7 +19,7 @@ logs:
 	docker compose logs -f
 
 build:
-	docker exec $(CONTAINER) go build -buildvcs=false ./cmd/nas-dashboard
+	docker exec $(CONTAINER) go build -buildvcs=false ./cmd/zfs-nas-dashboard
 
 fmt:
 	docker exec $(CONTAINER) gofmt -w /app/internal /app/cmd

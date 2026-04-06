@@ -15,9 +15,9 @@ RUN go mod download
 # Build the binary into /usr/local/bin so it is NOT shadowed by the
 # source bind-mount at /app used in development.
 COPY . .
-RUN go build -buildvcs=false -o /usr/local/bin/nas-dashboard ./cmd/nas-dashboard
+RUN go build -buildvcs=false -o /usr/local/bin/zfs-nas-dashboard ./cmd/zfs-nas-dashboard
 
 # /app is the working directory; in production nothing is mounted here.
 # In development the source tree is bind-mounted at /app for live editing.
 WORKDIR /app
-CMD ["/usr/local/bin/nas-dashboard"]
+CMD ["/usr/local/bin/zfs-nas-dashboard"]

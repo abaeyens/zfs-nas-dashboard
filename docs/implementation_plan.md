@@ -25,18 +25,18 @@ writable layer and survives restarts (avoid `docker compose down` to keep it).
 
 *No logic — just project skeleton and container setup.*
 
-1. `Dockerfile` — single stage, `golang:1.24-bookworm`; installs `smartmontools`, `zfsutils-linux`; `WORKDIR /app`; default `CMD ["go", "run", "./cmd/nas-dashboard"]`
+1. `Dockerfile` — single stage, `golang:1.24-bookworm`; installs `smartmontools`, `zfsutils-linux`; `WORKDIR /app`; default `CMD ["go", "run", "./cmd/zfs-nas-dashboard"]`
    - Container runs as **root** for now — `smartctl` can access `/dev/disk/by-id/` directly, no sudoers rule needed
    - **TODO**: add `useradd -u 1000 app` + `USER app` + narrow sudoers rule on host (see Security section in requirements.md)
-2. `docker-compose.yml` — one service; `network_mode: host`; bind-mounts source dir to `/app`, `/proc/spl/kstat/zfs` read-only, `/opt/nas-dashboard/data` to `/data`; per-disk device entries; all env vars with defaults; `restart: unless-stopped`
+2. `docker-compose.yml` — one service; `network_mode: host`; bind-mounts source dir to `/app`, `/proc/spl/kstat/zfs` read-only, `/opt/zfs-nas-dashboard/data` to `/data`; per-disk device entries; all env vars with defaults; `restart: unless-stopped`
 3. `docker compose build` — builds the image (downloads Go + apt deps once; cached thereafter)
-4. `go mod init github.com/arend/nas-dashboard` + `go.sum` — run inside container via `docker compose run --rm nas-dashboard go mod init ...`
+4. `go mod init github.com/abaeyens/zfs-nas-dashboard` + `go.sum` — run inside container via `docker compose run --rm zfs-nas-dashboard go mod init ...`
 5. Add deps: `go get github.com/rs/zerolog@latest modernc.org/sqlite@latest` — inside container
-6. Create empty package stubs: `cmd/nas-dashboard/main.go`, `internal/config/`, `internal/collector/`, `internal/store/`, `internal/broker/`, `internal/poller/`, `internal/handler/`, `web/`
+6. Create empty package stubs: `cmd/zfs-nas-dashboard/main.go`, `internal/config/`, `internal/collector/`, `internal/store/`, `internal/broker/`, `internal/poller/`, `internal/handler/`, `web/`
 7. `web/embed.go` with `//go:embed` directive (package `web`)
-8. `Makefile` — convenience targets: `shell` (`docker exec -it nas-dashboard bash`), `test` (`docker exec nas-dashboard go test ./...`), `logs` (`docker compose logs -f`), `up` / `down`
+8. `Makefile` — convenience targets: `shell` (`docker exec -it zfs-nas-dashboard bash`), `test` (`docker exec zfs-nas-dashboard go test ./...`), `logs` (`docker compose logs -f`), `up` / `down`
 
-**Verify**: `docker compose up -d` starts the container; `docker exec -it nas-dashboard go build ./...` succeeds with empty stubs.
+**Verify**: `docker compose up -d` starts the container; `docker exec -it zfs-nas-dashboard go build ./...` succeeds with empty stubs.
 
 ---
 
@@ -46,7 +46,7 @@ writable layer and survives restarts (avoid `docker compose down` to keep it).
    - Fields: `Port`, `PoolPath`, `PoolName`, `ScanDepth`, `TempHistoryHours`, `SmartPollInterval`, `FilesRefreshInterval`, `TempWarnC`, `TempCritC`, `ReallocWarn`, `ReallocCrit`, `PendingWarn`, `PendingCrit`, `UncorrWarn`, `UncorrCrit`, `DataDir`
    - All numeric vars parsed with `strconv`; defaults applied when env var is absent.
 
-**Verify**: `docker exec nas-dashboard go test ./internal/config/...` — missing required var returns error; all defaults applied correctly.
+**Verify**: `docker exec zfs-nas-dashboard go test ./internal/config/...` — missing required var returns error; all defaults applied correctly.
 
 ---
 
@@ -59,7 +59,7 @@ writable layer and survives restarts (avoid `docker compose down` to keep it).
    - `Prune(cutoff time.Time) error`: deletes rows older than `cutoff`.
    - Corruption recovery: if `Open` fails due to SQLite errors, log a warning, delete the file, and retry once.
 
-**Verify**: `docker exec nas-dashboard go test ./internal/store/...` — insert → `GetSince` returns the row; `Prune` removes old rows; corrupt DB is recreated automatically.
+**Verify**: `docker exec zfs-nas-dashboard go test ./internal/store/...` — insert → `GetSince` returns the row; `Prune` removes old rows; corrupt DB is recreated automatically.
 
 ---
 
@@ -85,7 +85,7 @@ writable layer and survives restarts (avoid `docker compose down` to keep it).
     - Builds `[]UserUsage` from `find` output; groups owners with uid < 1000 into a single `"system"` entry.
     - `UserUsage.Status` is always `"green"`.
 
-**Verify**: `docker exec nas-dashboard go test ./internal/collector/...` — tests use fixture command output injected via a `CommandRunner` func type; status-string logic validated with known threshold inputs. The container already has `zfs`, `zpool`, and `smartctl` available for any live integration tests.
+**Verify**: `docker exec zfs-nas-dashboard go test ./internal/collector/...` — tests use fixture command output injected via a `CommandRunner` func type; status-string logic validated with known threshold inputs. The container already has `zfs`, `zpool`, and `smartctl` available for any live integration tests.
 
 ---
 
@@ -97,7 +97,7 @@ writable layer and survives restarts (avoid `docker compose down` to keep it).
     - `Unregister(ch <-chan []byte)`: removes channel and closes it.
     - `Broadcast([]byte)`: non-blocking send to all registered channels; slow clients are dropped (not stalled).
 
-**Verify**: `docker exec nas-dashboard go test ./internal/broker/...` — broadcast reaches N clients; slow/full-buffer client is dropped without blocking; `Unregister` cleans up correctly.
+**Verify**: `docker exec zfs-nas-dashboard go test ./internal/broker/...` — broadcast reaches N clients; slow/full-buffer client is dropped without blocking; `Unregister` cleans up correctly.
 
 ---
 
@@ -122,11 +122,11 @@ writable layer and survives restarts (avoid `docker compose down` to keep it).
     - `GET /api/hardware` — returns `poller.LatestSMART()` as JSON.
     - `GET /api/events` — SSE (`Content-Type: text/event-stream`): sets required headers, calls `broker.Register`, immediately sends an `init` event (full temp history from `store.GetSince` + latest SMART), then loops on the channel until the client disconnects, then calls `broker.Unregister`.
 
-15. `cmd/nas-dashboard/main.go`:
+15. `cmd/zfs-nas-dashboard/main.go`:
     - Wiring: `config.MustLoad()` → `store.Open()` → `broker.New()` → `poller.Start()` → `handler.NewRouter()` → `http.ListenAndServe()`.
     - Graceful shutdown on `SIGINT` / `SIGTERM`: stop poller goroutines, close store, let broker drain.
 
-**Verify**: `docker exec nas-dashboard go build ./cmd/nas-dashboard` succeeds; `curl localhost:8080/api/zfs` from the host returns valid JSON (container uses `network_mode: host`).
+**Verify**: `docker exec zfs-nas-dashboard go build ./cmd/zfs-nas-dashboard` succeeds; `curl localhost:8080/api/zfs` from the host returns valid JSON (container uses `network_mode: host`).
 
 ---
 
@@ -168,7 +168,7 @@ writable layer and survives restarts (avoid `docker compose down` to keep it).
 
 *Docker is already set up from Phase 1. This phase just documents the host prerequisites.*
 
-19. `README.md`: host setup steps — `zfs allow` delegation command, sudoers snippet for `smartctl`, data directory creation (`/opt/nas-dashboard/data`), disk device paths to add to `docker-compose.yml`.
+19. `README.md`: host setup steps — `zfs allow` delegation command, sudoers snippet for `smartctl`, data directory creation (`/opt/zfs-nas-dashboard/data`), disk device paths to add to `docker-compose.yml`.
 
 **Verify**: a fresh setup following only `README.md` works end-to-end.
 
@@ -191,7 +191,7 @@ writable layer and survives restarts (avoid `docker compose down` to keep it).
 | `internal/broker/broker.go` | 5 |
 | `internal/poller/poller.go` | 6 |
 | `internal/handler/handler.go` | 7 |
-| `cmd/nas-dashboard/main.go` | 7 |
+| `cmd/zfs-nas-dashboard/main.go` | 7 |
 | `web/index.html` | 8 |
 | `web/style.css` | 8 |
 | `web/app.js` | 8 |

@@ -47,7 +47,7 @@ Technical decisions and implementation details. For what the system must do, see
 - Container is run with **`--network host`** so it can bind to the desired port and reach host interfaces without NAT.
 - Individual disk device files are bind-mounted into the container read-only using stable **`/dev/disk/by-id/`** paths (e.g. `ata-WDC_WD80EMAZ_XXXXXXXX`) rather than `/dev/sdX`, which can change after a drive replacement. The `docker-compose.yml` must be updated when drives are replaced.
 - The host's `/proc/spl/kstat/zfs` is bind-mounted read-only for ARC stats.
-- A host directory (e.g. `/opt/nas-dashboard/data`) is bind-mounted read-write for the SQLite database (`temps.db`).
+- A host directory (e.g. `/opt/zfs-nas-dashboard/data`) is bind-mounted read-write for the SQLite database (`temps.db`).
 - ZFS/SMART commands that require elevated privileges are handled via a narrow `sudoers` rule on the host (see Security section in requirements.md).
 - Restart policy: **`restart: unless-stopped`** in `docker-compose.yml`. No separate systemd unit needed.
 - A `tmpfs` is mounted at `/tmp` inside the container so the Go runtime and any tools requiring a writable temp directory work correctly with the read-only root filesystem.

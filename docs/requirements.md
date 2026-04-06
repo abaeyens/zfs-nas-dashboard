@@ -176,7 +176,7 @@ The dashboard is purely a monitoring tool. No write operations are ever performe
 - `smartctl` requires raw disk access (root or `disk` group). This is the **only** command that needs privilege.
 - A narrow `sudoers` rule on the host allows the container user to run only specific `smartctl` invocations:
   ```
-  nas-dashboard ALL=(root) NOPASSWD: /usr/sbin/smartctl -A -j /dev/sd*, \
+  zfs-nas-dashboard ALL=(root) NOPASSWD: /usr/sbin/smartctl -A -j /dev/sd*, \
                                       /usr/sbin/smartctl -i -j /dev/sd*, \
                                       /usr/sbin/smartctl -H -j /dev/sd*
   ```

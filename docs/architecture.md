@@ -3,10 +3,10 @@
 ## Project layout
 
 ```
-nas-dashboard/
+zfs-nas-dashboard/
 │
 ├── cmd/
-│   └── nas-dashboard/
+│   └── zfs-nas-dashboard/
 │       └── main.go            # entry point: wires config → store → broker → poller → handler
 │
 ├── internal/
