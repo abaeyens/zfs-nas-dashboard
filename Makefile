@@ -22,8 +22,9 @@ build:
 	docker exec $(CONTAINER) go build -buildvcs=false ./cmd/zfs-nas-dashboard
 
 fmt:
-	docker exec $(CONTAINER) gofmt -w /app/internal /app/cmd
-	docker exec $(CONTAINER) prettier --write /app/web/
+	docker build -q -f Dockerfile.dev -t $(CONTAINER)-dev .
+	docker run --rm -v "$(PWD):/app" $(CONTAINER)-dev gofmt -w /app/internal /app/cmd
+	docker run --rm -v "$(PWD):/app" $(CONTAINER)-dev prettier --write /app/web/
 
 screenshot:
 	docker build -f Dockerfile.screenshot -t $(SCREENSHOT_IMAGE) .

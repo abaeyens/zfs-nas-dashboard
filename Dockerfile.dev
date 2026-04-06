@@ -1,8 +1,17 @@
+# Development image — extends the runtime image with code-formatting tools.
+# Not suitable for production: contains nodejs, npm, and prettier.
+#
+# Used automatically when running `docker compose up` locally, via
+# docker-compose.override.yml.  Production deployments use the plain
+# Dockerfile instead:
+#   docker compose -f docker-compose.yml up -d
+
 FROM golang:1.24-bookworm
 
 RUN echo "deb http://deb.debian.org/debian bookworm contrib" >> /etc/apt/sources.list \
     && apt-get update \
-    && apt-get install -y --no-install-recommends smartmontools zfsutils-linux \
+    && apt-get install -y --no-install-recommends smartmontools zfsutils-linux nodejs npm \
+    && npm install -g prettier \
     && rm -rf /var/lib/apt/lists/*
 
 # Cache module downloads as a separate layer so rebuilds after code-only
@@ -16,7 +25,7 @@ RUN go mod download
 COPY . .
 RUN go build -buildvcs=false -o /usr/local/bin/zfs-nas-dashboard ./cmd/zfs-nas-dashboard
 
-# /app is the working directory; in production nothing is mounted here.
-# In development the source tree is bind-mounted at /app for live editing.
+# /app is the working directory; the source tree is bind-mounted here for
+# live editing in development.
 WORKDIR /app
 CMD ["/usr/local/bin/zfs-nas-dashboard"]
