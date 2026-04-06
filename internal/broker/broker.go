@@ -3,14 +3,23 @@
 // non-blocking sends; a client that cannot keep up is silently dropped.
 package broker
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
 
-const channelBuf = 8
+const (
+	channelBuf = 8
+	// maxClients is the maximum number of concurrent SSE connections.
+	// Register returns false when this limit is reached.
+	maxClients = 100
+)
 
 // Broker fans serialised JSON bytes out to any number of SSE clients.
 type Broker struct {
 	mu      sync.RWMutex
 	clients map[chan []byte]struct{}
+	count   atomic.Int32
 }
 
 // New returns an initialised Broker.
@@ -18,13 +27,19 @@ func New() *Broker {
 	return &Broker{clients: make(map[chan []byte]struct{})}
 }
 
-// Register allocates a new buffered channel for one SSE client and returns it.
-func (b *Broker) Register() <-chan []byte {
+// Register allocates a new buffered channel for one SSE client.
+// Returns (channel, true) on success, or (nil, false) if the connection cap
+// has been reached.
+func (b *Broker) Register() (<-chan []byte, bool) {
+	if b.count.Add(1) > maxClients {
+		b.count.Add(-1)
+		return nil, false
+	}
 	ch := make(chan []byte, channelBuf)
 	b.mu.Lock()
 	b.clients[ch] = struct{}{}
 	b.mu.Unlock()
-	return ch
+	return ch, true
 }
 
 // Unregister removes the channel from the hub and closes it so the SSE handler
@@ -36,6 +51,7 @@ func (b *Broker) Unregister(ch <-chan []byte) {
 		if c == ch {
 			delete(b.clients, c)
 			close(c)
+			b.count.Add(-1)
 			return
 		}
 	}

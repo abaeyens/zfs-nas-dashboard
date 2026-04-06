@@ -155,7 +155,11 @@ func handleEvents(br *broker.Broker, p *poller.Poller, cfg *config.Config, st *s
 			flusher.Flush()
 		}
 
-		ch := br.Register()
+		ch, ok := br.Register()
+		if !ok {
+			http.Error(w, "too many SSE connections", http.StatusServiceUnavailable)
+			return
+		}
 		defer br.Unregister(ch)
 
 		for {
