@@ -2,6 +2,7 @@ package collector
 
 import (
 	"fmt"
+	"os"
 	"os/user"
 	"strconv"
 	"strings"
@@ -71,14 +72,41 @@ func collectPoolStats(cfg *config.Config, run CommandRunner) (avail, snapshotByt
 	return avail, snapshotBytes, nil
 }
 
-// collectDirTree runs `du -x --block-size=1 --max-depth N` and builds a tree.
+// collectDirTree runs `du -x --block-size=1 --max-depth N` and builds a tree,
+// then prunes any nodes not readable by "others" (Unix permission bit o+r).
 func collectDirTree(cfg *config.Config, run CommandRunner) (*DirTree, error) {
 	maxDepth := strconv.Itoa(cfg.ScanDepth)
 	out, err := run("du", "--block-size=1", "--max-depth="+maxDepth, cfg.PoolPath)
 	if err != nil {
 		return nil, fmt.Errorf("du: %w", err)
 	}
-	return parseDuOutput(string(out), cfg.PoolPath), nil
+	tree := parseDuOutput(string(out), cfg.PoolPath)
+	return filterWorldReadable(tree), nil
+}
+
+// filterWorldReadable removes any DirTree node (and its entire subtree) whose
+// filesystem path does not have the "other read" permission bit (0o004) set.
+// This prevents the dashboard from exposing the existence or size of directories
+// that are not readable by unprivileged users.
+func filterWorldReadable(node *DirTree) *DirTree {
+	if node == nil {
+		return nil
+	}
+	info, err := os.Stat(node.Path)
+	if err != nil {
+		return nil // can't stat → hide
+	}
+	if info.Mode().Perm()&0o004 == 0 {
+		return nil // not world-readable → hide
+	}
+	var kept []*DirTree
+	for _, child := range node.Children {
+		if filtered := filterWorldReadable(child); filtered != nil {
+			kept = append(kept, filtered)
+		}
+	}
+	node.Children = kept
+	return node
 }
 
 // parseDuOutput turns `du` output into a DirTree. du prints deepest paths first,

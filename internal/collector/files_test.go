@@ -1,6 +1,8 @@
 package collector
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -68,5 +70,73 @@ func TestParseUserUsage_StatusAlwaysGreen(t *testing.T) {
 		if u.Status != "green" {
 			t.Errorf("user %q status: got %q, want green", u.User, u.Status)
 		}
+	}
+}
+
+// TestFilterWorldReadable verifies that directories without the "other read"
+// permission bit (0o004) are pruned from the tree, along with their subtrees.
+func TestFilterWorldReadable(t *testing.T) {
+	// Create a temporary directory structure:
+	//   root/          (0755 — world-readable)
+	//   root/pub/      (0755 — world-readable)
+	//   root/priv/     (0700 — NOT world-readable)
+	//   root/priv/sub/ (0755 — world-readable, but under a pruned parent)
+	root := t.TempDir() // 0700 by default on some systems; we'll chmod explicitly
+
+	pub := filepath.Join(root, "pub")
+	priv := filepath.Join(root, "priv")
+	sub := filepath.Join(priv, "sub")
+
+	for _, dir := range []string{pub, priv, sub} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Make root and pub world-readable.
+	if err := os.Chmod(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// priv is not world-readable.
+	if err := os.Chmod(priv, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	tree := &DirTree{
+		Name: "root",
+		Path: root,
+		Children: []*DirTree{
+			{Name: "pub", Path: pub},
+			{
+				Name: "priv",
+				Path: priv,
+				Children: []*DirTree{
+					{Name: "sub", Path: sub},
+				},
+			},
+		},
+	}
+
+	result := filterWorldReadable(tree)
+
+	if result == nil {
+		t.Fatal("root should be kept (world-readable)")
+	}
+	if len(result.Children) != 1 {
+		t.Fatalf("expected 1 child (pub), got %d", len(result.Children))
+	}
+	if result.Children[0].Name != "pub" {
+		t.Errorf("expected kept child to be 'pub', got %q", result.Children[0].Name)
+	}
+}
+
+// TestFilterWorldReadable_PrunesRoot verifies that a non-world-readable root returns nil.
+func TestFilterWorldReadable_PrunesRoot(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Chmod(root, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	tree := &DirTree{Name: "root", Path: root}
+	if filterWorldReadable(tree) != nil {
+		t.Error("expected nil for non-world-readable root")
 	}
 }
