@@ -1,4 +1,4 @@
-CONTAINER := nas-dashboard
+CONTAINER := zfs-nas-dashboard
 
 .PHONY: up down shell test logs build
 
