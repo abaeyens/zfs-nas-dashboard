@@ -176,7 +176,8 @@ function oklchToRgba(oklchStr, alpha) {
 }
 let diskColorMap  = {}; // by_id → oklch color string
 let byIdToDevMap  = {}; // by_id → dev short name (e.g. 'sda')
-let smartPollIntervalS = 60; // updated from server on init/hardware load
+let smartPollIntervalS  = 60; // updated from server on init/hardware load
+let tempHistoryHours    = 6;  // updated from server on init/hardware load
 
 // Sunburst drill state
 let _sunburstRootStack   = [];
@@ -588,9 +589,16 @@ function renderTempChart() {
     };
   });
 
-  const allTemps = Object.values(tempHistory).flat().map(p => p.celsius);
+  const allPoints = Object.values(tempHistory).flat();
+  const allTemps  = allPoints.map(p => p.celsius);
   const yMin = Math.min(...allTemps) - 1;
   const yMax = Math.max(...allTemps) + 1;
+
+  const allTsMs       = allPoints.map(p => p.ts * 1000);
+  const lastTs        = Math.max(...allTsMs);
+  const firstTs       = Math.min(...allTsMs);
+  const halfWindowMs  = (tempHistoryHours / 2) * 3600 * 1000;
+  const xMin          = Math.min(firstTs, lastTs - halfWindowMs);
 
   tempChart.setOption({
     backgroundColor: 'transparent',
@@ -600,7 +608,7 @@ function renderTempChart() {
     }},
     legend: { show: false },
     grid: { left: 40, right: 10, top: 10, bottom: 38 },
-    xAxis: { type: 'time', name: 'time [h]', nameLocation: 'middle', nameGap: 25, nameTextStyle: { fontSize: 12 }, axisLabel: { fontSize: 10, formatter: val => String(new Date(val).getHours()) } },
+    xAxis: { type: 'time', name: 'time [h]', nameLocation: 'middle', nameGap: 25, nameTextStyle: { fontSize: 12 }, minInterval: 3600 * 1000, min: xMin, max: lastTs, axisLabel: { fontSize: 10, formatter: val => String(new Date(val).getHours()) } },
     yAxis: { type: 'value', name: '°C', nameTextStyle: { fontSize: 10 }, axisLabel: { fontSize: 10 }, min: yMin, max: yMax },
     series,
   }, true);
@@ -621,7 +629,8 @@ function loadHardware() {
   fetch('/api/hardware')
     .then(r => r.ok ? r.json() : Promise.reject(r.status))
     .then(data => {
-      if (data.poll_interval_s) smartPollIntervalS = data.poll_interval_s;
+      if (data.poll_interval_s)    smartPollIntervalS = data.poll_interval_s;
+      if (data.temp_history_hours) tempHistoryHours   = data.temp_history_hours;
       renderDiskCards(data.disks);
       setUpdated('hw-updated');
       tempHistory = {};
@@ -640,7 +649,8 @@ function connectSSE() {
     try { msg = JSON.parse(evt.data); } catch { return; }
 
     if (msg.type === 'init' || msg.type === 'smart') {
-      if (msg.poll_interval_s) smartPollIntervalS = msg.poll_interval_s;
+      if (msg.poll_interval_s)    smartPollIntervalS = msg.poll_interval_s;
+      if (msg.temp_history_hours) tempHistoryHours   = msg.temp_history_hours;
       renderDiskCards(msg.disks);
       setUpdated('hw-updated');
       if (msg.type === 'init' && msg.history) {

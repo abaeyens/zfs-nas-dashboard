@@ -60,11 +60,12 @@ func handleHardware(cfg *config.Config, p *poller.Poller, st *store.Store) http.
 			history = nil
 		}
 		type response struct {
-			Disks         []collector.DiskInfo `json:"disks"`
-			History       []store.TempRow      `json:"history"`
-			PollIntervalS int                  `json:"poll_interval_s"`
+			Disks            []collector.DiskInfo `json:"disks"`
+			History          []store.TempRow      `json:"history"`
+			PollIntervalS    int                  `json:"poll_interval_s"`
+			TempHistoryHours int                  `json:"temp_history_hours"`
 		}
-		writeJSON(w, response{Disks: disks, History: history, PollIntervalS: int(cfg.SmartPollInterval.Seconds())})
+		writeJSON(w, response{Disks: disks, History: history, PollIntervalS: int(cfg.SmartPollInterval.Seconds()), TempHistoryHours: cfg.TempHistoryHours})
 	}
 }
 
@@ -121,12 +122,13 @@ func handleEvents(br *broker.Broker, p *poller.Poller, cfg *config.Config, st *s
 		disks := p.LatestSMART()
 		history, _ := st.GetSince(time.Duration(cfg.TempHistoryHours) * time.Hour)
 		type initPayload struct {
-			Type          string               `json:"type"`
-			Disks         []collector.DiskInfo `json:"disks"`
-			History       []store.TempRow      `json:"history"`
-			PollIntervalS int                  `json:"poll_interval_s"`
+			Type             string               `json:"type"`
+			Disks            []collector.DiskInfo `json:"disks"`
+			History          []store.TempRow      `json:"history"`
+			PollIntervalS    int                  `json:"poll_interval_s"`
+			TempHistoryHours int                  `json:"temp_history_hours"`
 		}
-		if b, err := json.Marshal(initPayload{Type: "init", Disks: disks, History: history, PollIntervalS: int(cfg.SmartPollInterval.Seconds())}); err == nil {
+		if b, err := json.Marshal(initPayload{Type: "init", Disks: disks, History: history, PollIntervalS: int(cfg.SmartPollInterval.Seconds()), TempHistoryHours: cfg.TempHistoryHours}); err == nil {
 			fmt.Fprintf(w, "data: %s\n\n", b)
 			flusher.Flush()
 		}
