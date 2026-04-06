@@ -1,0 +1,7 @@
+{
+  "name": "zfs-nas-dashboard-screenshots",
+  "private": true,
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

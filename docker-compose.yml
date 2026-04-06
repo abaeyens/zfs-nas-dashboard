@@ -1,7 +1,7 @@
 services:
-  nas-dashboard:
+  zfs-nas-dashboard:
     build: .
-    container_name: nas-dashboard
+    container_name: zfs-nas-dashboard
     network_mode: host
     pid: "host"          # shares host /proc — needed for /proc/spl/kstat/zfs (ARC stats)
     restart: unless-stopped

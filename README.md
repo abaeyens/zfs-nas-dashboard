@@ -8,6 +8,8 @@ served from a single Docker container, no external dependencies.
 
 <!-- screenshot -->
 
+<!-- TODO: add screenshot links once hosted -->
+
 ## Requirements
 
 - Ubuntu/Debian host with ZFS
@@ -74,7 +76,10 @@ All settings are environment variables in `docker-compose.yml`:
 
 ## Development
 
-The source tree is bind-mounted into the container at `/app`. The **running binary is baked into the image** at `/usr/local/bin/nas-dashboard` — after any source change you need to rebuild the image:
+The source tree is bind-mounted into the container at `/app`.
+The **running binary is baked into the image**
+at `/usr/local/bin/zfs-nas-dashboard` —
+after any source change you need to rebuild the image:
 
 ```bash
 docker compose build && docker compose up -d
@@ -89,21 +94,13 @@ To ease development, the [Makefile](Makefile) provides the following shorthands:
 | `make test` | Run all Go tests |
 | `make build` | Recompile binary inside container (does not restart) |
 | `make logs` | Follow container logs |
-
-
-## API
-
-| Endpoint | Description |
-|---|---|
-| `GET /api/hardware` | Latest SMART readings + temperature history |
-| `GET /api/zfs` | Pool health, datasets, snapshots, ARC stats |
-| `GET /api/files` | Directory tree + per-user usage (cached) |
-| `GET /api/events` | SSE stream (`hardware`, `files`, `zfs` event types) |
-| `GET /` | Embedded single-page frontend |
+| `make screenshot` | Generate screenshots into `docs/screenshots/` (requires live container) |
 
 
 ## Architecture
-
+Go backend serving a HTML/CSS/JS frontend.
+The frontend gets its data from the REST endpoints exposed by the backend,
+and the backend notifies the frontend of new data being available using SSE.
 See [architecture.md](architecture.md) for the component design and data-flow diagram.
 
 | Package | Role |
