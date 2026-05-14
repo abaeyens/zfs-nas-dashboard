@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"regexp"
 	"strings"
 	"syscall"
@@ -39,7 +38,7 @@ type DiskInfo struct {
 }
 
 // Smart discovers all disks in the ZFS pool and returns their SMART data.
-// run is used to execute external commands; pass SystemRunner for production.
+// run is used to execute external commands; pass DefaultRunner for production.
 func Smart(cfg *config.Config, run CommandRunner) ([]DiskInfo, error) {
 	devices, err := discoverDevices(cfg, run)
 	if err != nil {
@@ -56,11 +55,6 @@ func Smart(cfg *config.Config, run CommandRunner) ([]DiskInfo, error) {
 		disks = append(disks, info)
 	}
 	return disks, nil
-}
-
-// SystemRunner executes commands using os/exec with argument lists (no shell).
-func SystemRunner(name string, args ...string) ([]byte, error) {
-	return exec.Command(name, args...).Output()
 }
 
 // discoverDevices parses `zpool status -v` to extract /dev/disk/by-id/ paths.

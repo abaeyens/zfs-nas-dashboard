@@ -8,5 +8,5 @@ type CommandRunner func(name string, args ...string) ([]byte, error)
 
 // DefaultRunner is the production CommandRunner that calls the real binary.
 func DefaultRunner(name string, args ...string) ([]byte, error) {
-	return exec.Command(name, args...).CombinedOutput()
+	return exec.Command(name, args...).Output()
 }
