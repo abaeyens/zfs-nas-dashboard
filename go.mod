@@ -1,6 +1,6 @@
 module github.com/abaeyens/zfs-nas-dashboard
 
-go 1.26.1
+go 1.26
 
 require (
 	github.com/rs/zerolog v1.35.0

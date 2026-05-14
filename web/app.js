@@ -610,9 +610,12 @@ function renderDiskCards(disks) {
 
 function applyTempHistory(rows) {
   if (!rows) return;
+  const cutoff = Math.floor(Date.now() / 1000) - tempHistoryHours * 3600;
   rows.forEach((r) => {
     if (!tempHistory[r.disk]) tempHistory[r.disk] = [];
-    tempHistory[r.disk].push({ ts: r.ts, celsius: r.celsius });
+    const arr = tempHistory[r.disk];
+    arr.push({ ts: r.ts, celsius: r.celsius });
+    while (arr.length && arr[0].ts < cutoff) arr.shift();
   });
   renderTempChart();
 }
@@ -620,10 +623,13 @@ function applyTempHistory(rows) {
 function appendTempPoint(disks) {
   if (!disks) return;
   const now = Math.floor(Date.now() / 1000);
+  const cutoff = now - tempHistoryHours * 3600;
   disks.forEach((d) => {
     if (d.celsius == null || !d.by_id) return;
     if (!tempHistory[d.by_id]) tempHistory[d.by_id] = [];
-    tempHistory[d.by_id].push({ ts: now, celsius: d.celsius });
+    const arr = tempHistory[d.by_id];
+    arr.push({ ts: now, celsius: d.celsius });
+    while (arr.length && arr[0].ts < cutoff) arr.shift();
   });
   renderTempChart();
 }
@@ -660,14 +666,23 @@ function renderTempChart() {
     };
   });
 
-  const allPoints = Object.values(tempHistory).flat();
-  const allTemps = allPoints.map((p) => p.celsius);
-  const yMin = Math.min(...allTemps) - 1;
-  const yMax = Math.max(...allTemps) + 1;
-
-  const allTsMs = allPoints.map((p) => p.ts * 1000);
-  const lastTs = Math.max(...allTsMs);
-  const firstTs = Math.min(...allTsMs);
+  let tMin = Infinity;
+  let tMax = -Infinity;
+  let tsMin = Infinity;
+  let tsMax = -Infinity;
+  for (const arr of Object.values(tempHistory)) {
+    for (const p of arr) {
+      if (p.celsius < tMin) tMin = p.celsius;
+      if (p.celsius > tMax) tMax = p.celsius;
+      const tsMs = p.ts * 1000;
+      if (tsMs < tsMin) tsMin = tsMs;
+      if (tsMs > tsMax) tsMax = tsMs;
+    }
+  }
+  const yMin = tMin - 1;
+  const yMax = tMax + 1;
+  const lastTs = tsMax;
+  const firstTs = tsMin;
   const halfWindowMs = (tempHistoryHours / 2) * 3600 * 1000;
   const xMin = Math.min(firstTs, lastTs - halfWindowMs);
 

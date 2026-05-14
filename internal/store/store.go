@@ -27,8 +27,7 @@ type TempRow struct {
 
 // Store wraps a SQLite database for temperature persistence.
 type Store struct {
-	db   *sql.DB
-	path string
+	db *sql.DB
 }
 
 // Open opens (or creates) the SQLite database at dataDir/temps.db.
@@ -71,7 +70,7 @@ func open(path string) (*Store, error) {
 		}
 		return nil, err
 	}
-	return &Store{db: db, path: path}, nil
+	return &Store{db: db}, nil
 }
 
 // Close closes the underlying database connection.

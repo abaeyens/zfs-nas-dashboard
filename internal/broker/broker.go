@@ -22,15 +22,39 @@ type Broker struct {
 	count   atomic.Int32
 }
 
+// Client is a handle for a registered SSE client. The channel returned by
+// Recv must be ranged or selected on until it is closed; Unregister must be
+// called when the client disconnects.
+type Client struct {
+	b  *Broker
+	ch chan []byte
+}
+
+// Recv returns the receive-only view of the client's channel.
+func (c *Client) Recv() <-chan []byte { return c.ch }
+
+// Unregister removes the client from the broker and closes its channel so
+// any receiver exits its range/select loop. Safe to call multiple times.
+func (c *Client) Unregister() {
+	c.b.mu.Lock()
+	defer c.b.mu.Unlock()
+	if _, ok := c.b.clients[c.ch]; !ok {
+		return
+	}
+	delete(c.b.clients, c.ch)
+	close(c.ch)
+	c.b.count.Add(-1)
+}
+
 // New returns an initialised Broker.
 func New() *Broker {
 	return &Broker{clients: make(map[chan []byte]struct{})}
 }
 
 // Register allocates a new buffered channel for one SSE client.
-// Returns (channel, true) on success, or (nil, false) if the connection cap
+// Returns (client, true) on success, or (nil, false) if the connection cap
 // has been reached.
-func (b *Broker) Register() (<-chan []byte, bool) {
+func (b *Broker) Register() (*Client, bool) {
 	if b.count.Add(1) > maxClients {
 		b.count.Add(-1)
 		return nil, false
@@ -39,22 +63,7 @@ func (b *Broker) Register() (<-chan []byte, bool) {
 	b.mu.Lock()
 	b.clients[ch] = struct{}{}
 	b.mu.Unlock()
-	return ch, true
-}
-
-// Unregister removes the channel from the hub and closes it so the SSE handler
-// goroutine exits its range loop.
-func (b *Broker) Unregister(ch <-chan []byte) {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-	for c := range b.clients {
-		if c == ch {
-			delete(b.clients, c)
-			close(c)
-			b.count.Add(-1)
-			return
-		}
-	}
+	return &Client{b: b, ch: ch}, true
 }
 
 // Broadcast delivers msg to every registered client. Slow clients that have
