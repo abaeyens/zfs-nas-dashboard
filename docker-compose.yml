@@ -1,5 +1,6 @@
 services:
   zfs-nas-dashboard:
+    image: zfs-nas-dashboard
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,8 +13,6 @@ services:
     security_opt:
       - seccomp:unconfined  # Docker's default seccomp profile blocks HDIO_* ATA ioctls
     volumes:
-      # Source tree — edit on host, changes visible immediately inside container
-      - .:/app
       # Persistent SQLite data
       - ./data:/data
       # Pool filesystem — read-only, needed for du/find (Files section)

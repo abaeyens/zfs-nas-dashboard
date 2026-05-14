@@ -1,0 +1,16 @@
+# Dev overlay — applied on top of docker-compose.yml by `make dev`.
+#
+# Swaps the slim runtime image for the dev image (Go toolchain + dev tools),
+# bind-mounts the source tree at /app, and runs `go run` so source edits
+# apply on the next `make dev-restart`. Never auto-loaded — invoked
+# explicitly via the Makefile.
+services:
+  zfs-nas-dashboard:
+    image: zfs-nas-dashboard-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: ["go", "run", "-buildvcs=false", "./cmd/zfs-nas-dashboard"]

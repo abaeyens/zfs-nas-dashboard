@@ -1,32 +1,64 @@
 CONTAINER        := zfs-nas-dashboard
 SCREENSHOT_IMAGE := zfs-nas-dashboard-screenshot
 
-.PHONY: up down shell test logs build screenshot fmt claude
+COMPOSE_PROD := docker compose
+COMPOSE_DEV  := docker compose -f docker-compose.yml -f docker-compose.dev.yml
+
+.PHONY: up down restart logs image \
+        dev dev-down dev-restart dev-logs \
+        shell test build fmt claude screenshot
+
+# ── Production (slim runtime image, no source bind-mount) ────────────────────
 
 up:
-	docker compose up -d
+	$(COMPOSE_PROD) up -d --build
 
 down:
-	docker compose down
+	$(COMPOSE_PROD) down
+
+restart:
+	$(COMPOSE_PROD) restart
+
+logs:
+	$(COMPOSE_PROD) logs -f
+
+image:
+	$(COMPOSE_PROD) build
+
+# ── Development (long-running container with Go toolchain + bind-mount) ──────
+
+dev:
+	$(COMPOSE_DEV) up -d --build
+
+dev-down:
+	$(COMPOSE_DEV) down
+
+dev-restart:
+	$(COMPOSE_DEV) restart
+
+dev-logs:
+	$(COMPOSE_DEV) logs -f
+
+# ── Operations against whichever container is currently running ─────────────
 
 shell:
 	docker exec -it $(CONTAINER) bash
 
+# `go test` and `go build` require the dev image's Go toolchain — run `make dev` first.
 test:
 	docker exec -t $(CONTAINER) go test -buildvcs=false -v ./...
 
-logs:
-	docker compose logs -f
-
 build:
-	docker exec $(CONTAINER) go build -buildvcs=false ./cmd/zfs-nas-dashboard
+	docker exec $(CONTAINER) go build -buildvcs=false -o /tmp/zfs-nas-dashboard ./cmd/zfs-nas-dashboard
+
+# ── Ephemeral dev-image tasks (no running container required) ───────────────
 
 fmt:
 	docker build -q -f Dockerfile.dev -t $(CONTAINER)-dev .
 	docker run --rm -v "$(PWD):/app" $(CONTAINER)-dev gofmt -w /app/internal /app/cmd
 	docker run --rm -v "$(PWD):/app" $(CONTAINER)-dev prettier --write /app/web/
 
-# Run an interactive Claude Code session inside the dev container.
+# Run an interactive Claude Code session inside the dev image.
 # Runs as the host user (uid/gid) and mounts the host's HOME path through
 # unchanged, so files written by the in-container Claude end up owned by
 # the host user — no root-owned droppings under ~/.claude or ~/.claude.json.

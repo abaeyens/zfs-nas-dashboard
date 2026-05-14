@@ -51,7 +51,7 @@ ls -la /dev/disk/by-id/ | grep -v part
 ### 2. Build and bringup
 
 ```bash
-docker compose up -d
+make up
 ```
 
 and in your browser, open [http://localhost:8080](http://localhost:8080).
@@ -79,28 +79,45 @@ All settings are environment variables in `docker-compose.yml`:
 
 ---
 
-## Development
+## Deployment
 
-The source tree is bind-mounted into the container at `/app`.
-The **running binary is baked into the image**
-at `/usr/local/bin/zfs-nas-dashboard` —
-after any source change you need to rebuild the image:
+The production image is a slim Debian Bookworm runtime with just the
+compiled binary plus `smartmontools` and `zfsutils-linux` — no Go toolchain
+and no source tree. It is built in two stages from [`Dockerfile`](Dockerfile);
+the resulting image is roughly 150 MB.
 
-```bash
-docker compose build && docker compose up -d
-```
-
-To ease development, the [Makefile](Makefile) provides the following shorthands:
 | Command | Effect |
 |---|---|
-| `make up` | Start container |
-| `make down` | Stop and remove container |
-| `make shell` | Shell inside container |
-| `make test` | Run all Go tests |
-| `make build` | Recompile binary inside container (does not restart) |
-| `make logs` | Follow container logs |
-| `make fmt` | Format all Go and JS/HTML/CSS files |
-| `make screenshot` | Generate screenshots into `docs/screenshots/` (requires live container) |
+| `make up` | Build the production image and start the container |
+| `make down` | Stop and remove the production container |
+| `make restart` | Restart the production container |
+| `make logs` | Follow production container logs |
+| `make image` | Build the production image without starting the container |
+
+## Development
+
+For iterating on the code, [`make dev`](Makefile) starts a separate
+container built from [`Dockerfile.dev`](Dockerfile.dev) — same system
+tools as production, plus the Go toolchain, prettier, and Claude Code.
+The source tree is bind-mounted at `/app`, and `go run` recompiles on
+each `make dev-restart`.
+
+| Command | Effect |
+|---|---|
+| `make dev` | Build the dev image and start the dev container |
+| `make dev-down` | Stop and remove the dev container |
+| `make dev-restart` | Restart the dev container (re-runs `go run`) |
+| `make dev-logs` | Follow dev container logs |
+| `make shell` | Shell inside whichever container is running |
+| `make test` | Run all Go tests (requires the dev container to be up) |
+| `make build` | Compile the binary inside the dev container (sanity check) |
+| `make fmt` | Format Go (`gofmt`) and frontend (`prettier`) files |
+| `make claude` | Run Claude Code interactively inside the dev image |
+| `make screenshot` | Generate screenshots into `docs/screenshots/` (requires running container) |
+
+The dev and production containers share the same `container_name`, so only
+one of them can be running at a time — `make dev` after `make up` will
+swap the production container for the dev container in place.
 
 
 ## Architecture
