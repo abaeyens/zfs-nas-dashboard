@@ -68,7 +68,8 @@ All settings are environment variables in `docker-compose.yml`:
 | `SCAN_DEPTH` | `5` | Directory scanning depth for the sunburst chart |
 | `TEMP_HISTORY_HOURS` | `6` | Hours of disk temperature history to retain |
 | `SMART_POLL_INTERVAL` | `60` | How often to poll disk status (seconds) |
-| `FILES_REFRESH_INTERVAL` | `60` | How often to update the sunburst files chart (seconds) |
+| `FILES_REFRESH_INTERVAL` | `300` | How often to update the sunburst files chart (seconds) |
+| `ZFS_REFRESH_INTERVAL` | *(same as `FILES_REFRESH_INTERVAL`)* | How often to refresh ZFS pool / dataset / snapshot info (seconds) |
 | `TEMP_WARN_C` | `45` | Disks temperature warning threshold (°C) |
 | `TEMP_CRIT_C` | `55` | Disks temperature critical threshold (°C) |
 | `REALLOC_WARN` / `REALLOC_CRIT` | `1` / `5` | Disks reallocated sectors thresholds |

@@ -96,7 +96,7 @@ func (p *Poller) runFiles(ctx context.Context) {
 // The ZFS HTTP handler calls the collector directly on each request, so we
 // only need to push a lightweight notification via SSE.
 func (p *Poller) runZFS(ctx context.Context) {
-	ticker := time.NewTicker(p.cfg.FilesRefreshInterval)
+	ticker := time.NewTicker(p.cfg.ZFSRefreshInterval)
 	defer ticker.Stop()
 	for {
 		select {

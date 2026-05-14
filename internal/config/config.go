@@ -22,6 +22,7 @@ type Config struct {
 	TempHistoryHours     int
 	SmartPollInterval    time.Duration
 	FilesRefreshInterval time.Duration
+	ZFSRefreshInterval   time.Duration
 
 	// Temperature thresholds (°C)
 	TempWarnC int
@@ -78,11 +79,14 @@ func Load() (*Config, error) {
 	cfg.UncorrWarn, parseErrs = appendInt(parseErrs, "UNCORR_WARN", 1)
 	cfg.UncorrCrit, parseErrs = appendInt(parseErrs, "UNCORR_CRIT", 5)
 
-	var smartSecs, filesSecs int
+	var smartSecs, filesSecs, zfsSecs int
 	smartSecs, parseErrs = appendInt(parseErrs, "SMART_POLL_INTERVAL", 60)
-	filesSecs, parseErrs = appendInt(parseErrs, "FILES_REFRESH_INTERVAL", 60)
+	filesSecs, parseErrs = appendInt(parseErrs, "FILES_REFRESH_INTERVAL", 300)
+	// ZFS_REFRESH_INTERVAL defaults to FILES_REFRESH_INTERVAL when unset.
+	zfsSecs, parseErrs = appendInt(parseErrs, "ZFS_REFRESH_INTERVAL", filesSecs)
 	cfg.SmartPollInterval = time.Duration(smartSecs) * time.Second
 	cfg.FilesRefreshInterval = time.Duration(filesSecs) * time.Second
+	cfg.ZFSRefreshInterval = time.Duration(zfsSecs) * time.Second
 
 	if len(parseErrs) > 0 {
 		return nil, errors.Join(parseErrs...)
