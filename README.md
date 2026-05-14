@@ -9,7 +9,7 @@
 
 Read-only browser dashboard for a ZFS NAS.
 Three panes — **Files**, **ZFS**, **Hardware** —
-served from a single Docker container, no external dependencies.
+served from a single Docker container, with no external runtime dependencies.
 
 ![Mobile](docs/screenshots/mobile-all.png)
 _On mobile, also works perfectly on desktop screens of various sizes_

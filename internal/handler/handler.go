@@ -91,8 +91,12 @@ func handleHardware(cfg *config.Config, p *poller.Poller, st *store.Store) http.
 	}
 }
 
-// handleZFS calls the ZFS collector on every request (data is cheap to fetch
-// and changes infrequently).
+// handleZFS calls the ZFS collector on every request. Each call forks
+// zpool/zfs three times, and every connected SSE client refetches on each
+// `zfs` broadcast (FilesRefreshInterval), so total cost scales with client
+// count. This is fine because the broker caps concurrent SSE clients to a
+// small number (single-user / small-deployment trust model); if that cap
+// grew, this would need to be cached and broadcast like SMART/files.
 func handleZFS(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		result, err := collector.ZFS(cfg, collector.DefaultRunner)
