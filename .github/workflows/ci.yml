@@ -20,3 +20,12 @@ jobs:
 
       - name: Run tests
         run: go test -buildvcs=false ./...
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: gofmt
+        run: test -z "$(gofmt -l .)"
+
+      - name: go mod tidy -diff
+        run: go mod tidy -diff
