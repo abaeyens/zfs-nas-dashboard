@@ -83,6 +83,7 @@ func (b *Broker) Broadcast(msg []byte) {
 			if _, ok := b.clients[c]; ok {
 				delete(b.clients, c)
 				close(c)
+				b.count.Add(-1)
 			}
 		}
 		b.mu.Unlock()
