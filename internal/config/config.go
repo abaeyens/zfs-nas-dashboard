@@ -125,4 +125,3 @@ func appendInt(errs []error, key string, def int) (int, []error) {
 	}
 	return n, errs
 }
-
