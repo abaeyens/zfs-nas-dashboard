@@ -55,7 +55,7 @@ func Load() (*Config, error) {
 	}
 
 	if len(errs) > 0 {
-		return nil, joinErrors(errs)
+		return nil, errors.Join(errs...)
 	}
 
 	cfg := &Config{
@@ -85,7 +85,7 @@ func Load() (*Config, error) {
 	cfg.FilesRefreshInterval = time.Duration(filesSecs) * time.Second
 
 	if len(parseErrs) > 0 {
-		return nil, joinErrors(parseErrs)
+		return nil, errors.Join(parseErrs...)
 	}
 
 	return cfg, nil
@@ -122,13 +122,3 @@ func appendInt(errs []error, key string, def int) (int, []error) {
 	return n, errs
 }
 
-func joinErrors(errs []error) error {
-	msg := ""
-	for i, e := range errs {
-		if i > 0 {
-			msg += "; "
-		}
-		msg += e.Error()
-	}
-	return errors.New(msg)
-}
