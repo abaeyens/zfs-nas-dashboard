@@ -1,7 +1,7 @@
 CONTAINER        := zfs-nas-dashboard
 SCREENSHOT_IMAGE := zfs-nas-dashboard-screenshot
 
-.PHONY: up down shell test logs build screenshot fmt
+.PHONY: up down shell test logs build screenshot fmt claude
 
 up:
 	docker compose up -d
@@ -25,6 +25,24 @@ fmt:
 	docker build -q -f Dockerfile.dev -t $(CONTAINER)-dev .
 	docker run --rm -v "$(PWD):/app" $(CONTAINER)-dev gofmt -w /app/internal /app/cmd
 	docker run --rm -v "$(PWD):/app" $(CONTAINER)-dev prettier --write /app/web/
+
+# Run an interactive Claude Code session inside the dev container.
+# Runs as the host user (uid/gid) and mounts the host's HOME path through
+# unchanged, so files written by the in-container Claude end up owned by
+# the host user — no root-owned droppings under ~/.claude or ~/.claude.json.
+# The container has no Docker socket and no host filesystem access outside
+# the repo and the two mounted config paths.
+claude:
+	docker build -f Dockerfile.dev -t $(CONTAINER)-dev .
+	touch "$(HOME)/.claude.json"
+	docker run -it --rm --init \
+	  --user "$$(id -u):$$(id -g)" \
+	  -e HOME="$(HOME)" \
+	  -v "$(PWD):/app" \
+	  -v "$(HOME)/.claude:$(HOME)/.claude" \
+	  -v "$(HOME)/.claude.json:$(HOME)/.claude.json" \
+	  -w /app \
+	  $(CONTAINER)-dev claude
 
 screenshot:
 	docker build -f Dockerfile.screenshot -t $(SCREENSHOT_IMAGE) .
