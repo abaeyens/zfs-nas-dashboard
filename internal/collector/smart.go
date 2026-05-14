@@ -26,7 +26,7 @@ type DiskInfo struct {
 
 	Health string `json:"health"` // "PASSED" / "FAILED" / "UNKNOWN"
 
-	Celsius        int    `json:"celsius"`
+	Celsius        *int   `json:"celsius"`
 	CelsiusStatus  string `json:"celsius_status"`
 	PowerOnHours   int64  `json:"power_on_hours"`
 	ReallocSectors int64  `json:"reallocated_sectors"`
@@ -202,13 +202,19 @@ func parseAttributes(data []byte, cfg *config.Config, info *DiskInfo) {
 		attrMap[a.ID] = a.Raw.Value
 	}
 
-	// Temperature: prefer attr 194, fall back to 190.
+	// Temperature: prefer attr 194, fall back to 190. Absent (or zero) means
+	// the drive did not report a temperature; leave Celsius nil and clear the
+	// status so the frontend renders an em-dash with neutral styling.
 	if t, ok := attrMap[194]; ok && t > 0 {
-		info.Celsius = int(t)
+		v := int(t)
+		info.Celsius = &v
 	} else if t, ok := attrMap[190]; ok && t > 0 {
-		info.Celsius = int(t)
+		v := int(t)
+		info.Celsius = &v
 	}
-	info.CelsiusStatus = tempStatus(info.Celsius, cfg.TempWarnC, cfg.TempCritC)
+	if info.Celsius != nil {
+		info.CelsiusStatus = tempStatus(*info.Celsius, cfg.TempWarnC, cfg.TempCritC)
+	}
 
 	info.ReallocSectors = attrMap[5]
 	info.ReallocStatus = thresholdStatus(info.ReallocSectors, int64(cfg.ReallocWarn), int64(cfg.ReallocCrit))

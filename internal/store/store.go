@@ -48,12 +48,8 @@ func Open(dataDir string) (*Store, error) {
 		}
 	}
 
-	// Prune at startup then daily.
-	if err := s.Prune(time.Now().Add(-7 * 24 * time.Hour)); err != nil {
-		log.Warn().Err(err).Msg("store: initial prune")
-	}
-	go s.dailyPrune()
-
+	// Pruning is driven by the poller on every tick using TempHistoryHours;
+	// no separate retention loop is needed here.
 	return s, nil
 }
 
@@ -119,15 +115,4 @@ func (s *Store) GetSince(d time.Duration) ([]TempRow, error) {
 func (s *Store) Prune(cutoff time.Time) error {
 	_, err := s.db.Exec(`DELETE FROM temps WHERE ts < ?`, cutoff.Unix())
 	return err
-}
-
-func (s *Store) dailyPrune() {
-	ticker := time.NewTicker(24 * time.Hour)
-	defer ticker.Stop()
-	for range ticker.C {
-		cutoff := time.Now().Add(-7 * 24 * time.Hour)
-		if err := s.Prune(cutoff); err != nil {
-			log.Warn().Err(err).Msg("store: daily prune failed")
-		}
-	}
 }

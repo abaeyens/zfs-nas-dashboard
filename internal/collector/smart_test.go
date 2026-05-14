@@ -104,8 +104,8 @@ func TestSmart_StatusStrings(t *testing.T) {
 	}
 
 	d := disks[0]
-	if d.Celsius != 30 {
-		t.Errorf("Celsius: got %d, want 30", d.Celsius)
+	if d.Celsius == nil || *d.Celsius != 30 {
+		t.Errorf("Celsius: got %v, want 30", d.Celsius)
 	}
 	if d.CelsiusStatus != "green" {
 		t.Errorf("CelsiusStatus: got %q, want green", d.CelsiusStatus)
@@ -190,7 +190,7 @@ func TestSmart_TempFallbackAttr190(t *testing.T) {
 	if len(disks) == 0 {
 		t.Fatal("expected at least one disk")
 	}
-	if disks[0].Celsius != 42 {
-		t.Errorf("Celsius fallback: got %d, want 42", disks[0].Celsius)
+	if disks[0].Celsius == nil || *disks[0].Celsius != 42 {
+		t.Errorf("Celsius fallback: got %v, want 42", disks[0].Celsius)
 	}
 }

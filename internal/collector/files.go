@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -222,5 +223,14 @@ func parseUserUsage(output string) []UserUsage {
 	for name, bytes := range tally {
 		users = append(users, UserUsage{User: name, SizeBytes: bytes, Status: "green"})
 	}
+	// Sort deterministically: largest first, ties broken by username ascending.
+	// ECharts assigns pie-wedge colours by index, so a stable order keeps the
+	// colour for each user consistent across renders.
+	sort.Slice(users, func(i, j int) bool {
+		if users[i].SizeBytes != users[j].SizeBytes {
+			return users[i].SizeBytes > users[j].SizeBytes
+		}
+		return users[i].User < users[j].User
+	})
 	return users
 }

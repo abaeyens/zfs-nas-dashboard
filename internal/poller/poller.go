@@ -119,9 +119,12 @@ func (p *Poller) collectSmart() {
 	p.smart = disks
 	p.smartMu.Unlock()
 
-	// Persist temperatures.
+	// Persist temperatures (skip disks that didn't report one).
 	for _, d := range disks {
-		if err := p.store.Insert(d.ByID, float64(d.Celsius)); err != nil {
+		if d.Celsius == nil {
+			continue
+		}
+		if err := p.store.Insert(d.ByID, float64(*d.Celsius)); err != nil {
 			log.Error().Err(err).Str("disk", d.ByID).Msg("store insert failed")
 		}
 	}
